@@ -1,0 +1,168 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Heating Control",
+        "description": "Allgemeine Einstellungen. Räume (Zonen) fügst du danach über „Zone hinzufügen“ hinzu.",
+        "data": {
+          "base_temp_entity": "Basis-Solltemperatur",
+          "outdoor_temp_entity": "Außentemperatur",
+          "schedule_entity": "Zeitplan (Komfortzeiten)",
+          "person_entities": "Personen",
+          "frost_threshold": "Frostgrenze",
+          "away_eco_heating": "Bei Abwesenheit mit ECO-Temperatur weiterheizen",
+          "window_reaction_time": "Reaktionszeit Fenster"
+        },
+        "data_description": {
+          "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
+          "outdoor_temp_entity": "Wird nur für den Frostschutz gebraucht.",
+          "schedule_entity": "Während der Zeitplan an ist, gilt die Komforttemperatur (wenn jemand zu Hause ist).",
+          "person_entities": "Ist keine der Personen zu Hause, wird nur ECO geheizt.",
+          "frost_threshold": "Bei dieser Außentemperatur oder kälter wird auch bei ausgeschalteter ECO-Heizung geheizt (nur im Winterbetrieb).",
+          "away_eco_heating": "Aus: Niemand zu Hause bedeutet Heizung aus (außer Frostschutz).",
+          "window_reaction_time": "Sekunden, die ein Fenster offen sein muss, bevor die Heizung ausgeht. 0 = sofort."
+        }
+      },
+      "reconfigure": {
+        "title": "Home Heating Control",
+        "data": {
+          "base_temp_entity": "Basis-Solltemperatur",
+          "outdoor_temp_entity": "Außentemperatur",
+          "schedule_entity": "Zeitplan (Komfortzeiten)",
+          "person_entities": "Personen",
+          "frost_threshold": "Frostgrenze",
+          "away_eco_heating": "Bei Abwesenheit mit ECO-Temperatur weiterheizen",
+          "window_reaction_time": "Reaktionszeit Fenster"
+        },
+        "data_description": {
+          "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
+          "outdoor_temp_entity": "Wird nur für den Frostschutz gebraucht.",
+          "schedule_entity": "Während der Zeitplan an ist, gilt die Komforttemperatur (wenn jemand zu Hause ist).",
+          "person_entities": "Ist keine der Personen zu Hause, wird nur ECO geheizt.",
+          "frost_threshold": "Bei dieser Außentemperatur oder kälter wird auch bei ausgeschalteter ECO-Heizung geheizt (nur im Winterbetrieb).",
+          "away_eco_heating": "Aus: Niemand zu Hause bedeutet Heizung aus (außer Frostschutz).",
+          "window_reaction_time": "Sekunden, die ein Fenster offen sein muss, bevor die Heizung ausgeht. 0 = sofort."
+        }
+      },
+      "areas": {
+        "title": "Zonen aus Räumen anlegen",
+        "description": "Für diese Räume (Bereiche mit Thermostaten) wird je eine Zone angelegt. Abweichung Komfort 0, ECO −3; einen Fenstersensor setze ich nur, wenn der Raum genau einen hat. Alles lässt sich danach je Zone ändern.",
+        "data": {
+          "areas": "Räume"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Home Heating Control ist bereits eingerichtet.",
+      "reconfigure_successful": "Einstellungen gespeichert."
+    }
+  },
+  "config_subentries": {
+    "zone": {
+      "title": "Zone",
+      "step": {
+        "user": {
+          "title": "Zone",
+          "data": {
+            "name": "Name",
+            "thermostats": "Thermostate",
+            "window_entity": "Fenstersensor",
+            "comfort_offset": "Abweichung Komfort",
+            "eco_offset": "Abweichung ECO",
+            "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung"
+          },
+          "data_description": {
+            "window_entity": "Optional. Fenster offen = Thermostate aus.",
+            "comfort_offset": "Wird zur Basis-Solltemperatur addiert, z. B. −1 für das Bad.",
+            "eco_offset": "Gilt bei Abwesenheit, außerhalb des Zeitplans oder bei ECO.",
+            "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert."
+          }
+        },
+        "reconfigure": {
+          "title": "Zone",
+          "data": {
+            "name": "Name",
+            "thermostats": "Thermostate",
+            "window_entity": "Fenstersensor",
+            "comfort_offset": "Abweichung Komfort",
+            "eco_offset": "Abweichung ECO",
+            "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung"
+          },
+          "data_description": {
+            "window_entity": "Optional. Fenster offen = Thermostate aus.",
+            "comfort_offset": "Wird zur Basis-Solltemperatur addiert, z. B. −1 für das Bad.",
+            "eco_offset": "Gilt bei Abwesenheit, außerhalb des Zeitplans oder bei ECO.",
+            "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert."
+          }
+        }
+      },
+      "error": {
+        "name_required": "Bitte einen Namen eingeben.",
+        "name_exists": "Eine Zone mit diesem Namen gibt es schon."
+      },
+      "abort": {
+        "reconfigure_successful": "Einstellungen gespeichert."
+      },
+      "initiate_flow": {
+        "user": "Zone hinzufügen"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "decision": {
+        "name": "Entscheidung",
+        "state": {
+          "window_open": "Fenster offen",
+          "heating_disabled": "Heizung aus",
+          "frost_protection": "Frostschutz",
+          "eco_forced": "ECO erzwungen",
+          "away_eco": "Abwesend (ECO)",
+          "schedule_comfort": "Zeitplan (Komfort)",
+          "comfort_forced": "Komfort erzwungen",
+          "schedule_off_eco": "Außerhalb Zeitplan (ECO)",
+          "zone_disabled": "Zone ausgeschaltet",
+          "zone_frost_protection": "Ausgeschaltet (Frostschutz)",
+          "party": "Party"
+        }
+      }
+    },
+    "switch": {
+      "winter": {
+        "name": "Heizung aktiv"
+      },
+      "party": {
+        "name": "Party"
+      },
+      "comfort_always": {
+        "name": "Komfort dauerhaft"
+      },
+      "eco": {
+        "name": "ECO dauerhaft"
+      },
+      "zone_eco": {
+        "name": "ECO"
+      },
+      "zone_enabled": {
+        "name": "Heizung"
+      }
+    },
+    "number": {
+      "correction": {
+        "name": "Korrektur Solltemperatur"
+      },
+      "disabled_min_temp": {
+        "name": "Mindesttemperatur ausgeschaltete Zonen (Frost)"
+      },
+      "party_hours": {
+        "name": "Party-Dauer"
+      },
+      "party_temp": {
+        "name": "Party-Temperatur"
+      },
+      "zone_eco_offset": {
+        "name": "ECO-Absenkung"
+      }
+    }
+  }
+}

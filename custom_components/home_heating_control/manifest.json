@@ -1,0 +1,13 @@
+{
+  "domain": "home_heating_control",
+  "name": "Home Heating Control",
+  "codeowners": ["@ingo-home-iot"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/ingo-home-iot/home-heating-control",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/ingo-home-iot/home-heating-control/issues",
+  "requirements": [],
+  "version": "0.1.10"
+}

@@ -1,0 +1,168 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Heating Control",
+        "description": "General settings. Add rooms (zones) afterwards via “Add zone”.",
+        "data": {
+          "base_temp_entity": "Base target temperature",
+          "outdoor_temp_entity": "Outdoor temperature",
+          "schedule_entity": "Schedule (comfort times)",
+          "person_entities": "People",
+          "frost_threshold": "Frost threshold",
+          "away_eco_heating": "Keep heating at ECO temperature when away",
+          "window_reaction_time": "Window reaction time"
+        },
+        "data_description": {
+          "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
+          "outdoor_temp_entity": "Only used for frost protection.",
+          "schedule_entity": "While the schedule is on, the comfort temperature applies (if someone is home).",
+          "person_entities": "If none of them is home, only ECO heating applies.",
+          "frost_threshold": "At or below this outdoor temperature heating continues even if ECO heating is off (winter mode only).",
+          "away_eco_heating": "Off: nobody home means heating off (except frost protection).",
+          "window_reaction_time": "Seconds a window must stay open before heating turns off. 0 = immediately."
+        }
+      },
+      "reconfigure": {
+        "title": "Home Heating Control",
+        "data": {
+          "base_temp_entity": "Base target temperature",
+          "outdoor_temp_entity": "Outdoor temperature",
+          "schedule_entity": "Schedule (comfort times)",
+          "person_entities": "People",
+          "frost_threshold": "Frost threshold",
+          "away_eco_heating": "Keep heating at ECO temperature when away",
+          "window_reaction_time": "Window reaction time"
+        },
+        "data_description": {
+          "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
+          "outdoor_temp_entity": "Only used for frost protection.",
+          "schedule_entity": "While the schedule is on, the comfort temperature applies (if someone is home).",
+          "person_entities": "If none of them is home, only ECO heating applies.",
+          "frost_threshold": "At or below this outdoor temperature heating continues even if ECO heating is off (winter mode only).",
+          "away_eco_heating": "Off: nobody home means heating off (except frost protection).",
+          "window_reaction_time": "Seconds a window must stay open before heating turns off. 0 = immediately."
+        }
+      },
+      "areas": {
+        "title": "Create zones from areas",
+        "description": "One zone is created for each of these areas (areas with thermostats). Comfort offset 0, ECO −3; a window sensor is only set if the area has exactly one. Everything can be changed per zone afterwards.",
+        "data": {
+          "areas": "Areas"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Home Heating Control is already set up.",
+      "reconfigure_successful": "Settings saved."
+    }
+  },
+  "config_subentries": {
+    "zone": {
+      "title": "Zone",
+      "step": {
+        "user": {
+          "title": "Zone",
+          "data": {
+            "name": "Name",
+            "thermostats": "Thermostats",
+            "window_entity": "Window sensor",
+            "comfort_offset": "Comfort offset",
+            "eco_offset": "ECO offset",
+            "eco_relative": "ECO offset in addition to comfort offset"
+          },
+          "data_description": {
+            "window_entity": "Optional. Window open = thermostats off.",
+            "comfort_offset": "Added to the base target temperature, e.g. −1 for the bathroom.",
+            "eco_offset": "Applies when away, outside the schedule or with ECO.",
+            "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added."
+          }
+        },
+        "reconfigure": {
+          "title": "Zone",
+          "data": {
+            "name": "Name",
+            "thermostats": "Thermostats",
+            "window_entity": "Window sensor",
+            "comfort_offset": "Comfort offset",
+            "eco_offset": "ECO offset",
+            "eco_relative": "ECO offset in addition to comfort offset"
+          },
+          "data_description": {
+            "window_entity": "Optional. Window open = thermostats off.",
+            "comfort_offset": "Added to the base target temperature, e.g. −1 for the bathroom.",
+            "eco_offset": "Applies when away, outside the schedule or with ECO.",
+            "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added."
+          }
+        }
+      },
+      "error": {
+        "name_required": "Please enter a name.",
+        "name_exists": "A zone with this name already exists."
+      },
+      "abort": {
+        "reconfigure_successful": "Settings saved."
+      },
+      "initiate_flow": {
+        "user": "Add zone"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "decision": {
+        "name": "Decision",
+        "state": {
+          "window_open": "Window open",
+          "heating_disabled": "Heating off",
+          "frost_protection": "Frost protection",
+          "eco_forced": "ECO forced",
+          "away_eco": "Away (ECO)",
+          "schedule_comfort": "Schedule (comfort)",
+          "comfort_forced": "Comfort forced",
+          "schedule_off_eco": "Outside schedule (ECO)",
+          "zone_disabled": "Zone switched off",
+          "zone_frost_protection": "Switched off (frost protection)",
+          "party": "Party"
+        }
+      }
+    },
+    "switch": {
+      "winter": {
+        "name": "Heating enabled"
+      },
+      "party": {
+        "name": "Party"
+      },
+      "comfort_always": {
+        "name": "Comfort always"
+      },
+      "eco": {
+        "name": "ECO always"
+      },
+      "zone_eco": {
+        "name": "ECO"
+      },
+      "zone_enabled": {
+        "name": "Heating"
+      }
+    },
+    "number": {
+      "correction": {
+        "name": "Target temperature correction"
+      },
+      "disabled_min_temp": {
+        "name": "Minimum temperature of switched-off zones (frost)"
+      },
+      "party_hours": {
+        "name": "Party duration"
+      },
+      "party_temp": {
+        "name": "Party temperature"
+      },
+      "zone_eco_offset": {
+        "name": "ECO reduction"
+      }
+    }
+  }
+}
