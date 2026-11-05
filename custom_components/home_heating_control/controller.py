@@ -49,6 +49,7 @@ class Zone:
     name: str
     thermostats: list[str]
     window_entity: str | None
+    follow_bed: bool
     comfort_offset: float
     eco_offset: float
     eco_relative: bool
@@ -94,6 +95,13 @@ class HeatingController:
             data.get(const.CONF_REACTION_TIME, const.DEFAULT_REACTION_TIME)
         )
 
+        self._bed_entity: str | None = data.get(const.CONF_BED)
+        self._bed_delay: float = float(
+            data.get(const.CONF_BED_DELAY, const.DEFAULT_BED_DELAY)
+        )
+        self.bed_occupied = False
+        self._bed_timer: CALLBACK_TYPE | None = None
+
         self.flags: dict[str, bool] = dict.fromkeys(const.FLAGS, False)
         self.correction: float = 0.0
         self.party_hours: float = float(const.DEFAULT_PARTY_HOURS)
@@ -110,6 +118,7 @@ class HeatingController:
                 name=subentry.title,
                 thermostats=list(sub[const.CONF_THERMOSTATS]),
                 window_entity=sub.get(const.CONF_WINDOW),
+                follow_bed=bool(sub.get(const.CONF_FOLLOW_BED, False)),
                 comfort_offset=float(sub.get(const.CONF_COMFORT_OFFSET, 0)),
                 eco_offset=float(sub.get(const.CONF_ECO_OFFSET, 0)),
                 eco_relative=bool(sub.get(const.CONF_ECO_RELATIVE, False)),
@@ -133,6 +142,8 @@ class HeatingController:
             if zone.window_entity
         }
         watched.update(window_map)
+        if self._bed_entity:
+            watched.add(self._bed_entity)
         self._unsubs.append(
             async_track_state_change_event(
                 self.hass, sorted(watched), self._handle_state_change
@@ -152,6 +163,7 @@ class HeatingController:
             unsub()
         self._unsubs.clear()
         self._cancel_party_timer()
+        self._cancel_bed_timer()
         for zone in self.zones.values():
             if zone.window_timer:
                 zone.window_timer()
@@ -159,6 +171,7 @@ class HeatingController:
 
     async def _handle_started(self, _hass: HomeAssistant) -> None:
         self._started = True
+        self.bed_occupied = self._bed_live()
         for zone in self.zones.values():
             zone.window_open = self._window_live(zone)
         self._frost_active = self._frost_now()
@@ -169,6 +182,9 @@ class HeatingController:
     @callback
     def _handle_state_change(self, event: Event[EventStateChangedData]) -> None:
         entity_id = event.data["entity_id"]
+        if entity_id == self._bed_entity:
+            self._debounce_bed()
+            return
         for zone in self.zones.values():
             if zone.window_entity == entity_id:
                 self._debounce_window(zone)
@@ -182,6 +198,38 @@ class HeatingController:
         if now != self._frost_active:
             self._frost_active = now
             self.request_update()
+
+    def _bed_live(self) -> bool:
+        if self._bed_entity is None:
+            return False
+        state = self.hass.states.get(self._bed_entity)
+        return state is not None and state.state == STATE_ON
+
+    @callback
+    def _cancel_bed_timer(self) -> None:
+        if self._bed_timer is not None:
+            self._bed_timer()
+            self._bed_timer = None
+
+    @callback
+    def _debounce_bed(self) -> None:
+        """Bett-Zustand erst nach der Wartezeit übernehmen (kurzes Aufstehen zählt nicht)."""
+        self._cancel_bed_timer()
+        live = self._bed_live()
+        if live == self.bed_occupied:
+            return
+        if self._bed_delay <= 0:
+            self.bed_occupied = live
+            self.request_update()
+            return
+
+        @callback
+        def _commit(_now: Any) -> None:
+            self._bed_timer = None
+            self.bed_occupied = self._bed_live()
+            self.request_update()
+
+        self._bed_timer = async_call_later(self.hass, self._bed_delay * 60, _commit)
 
     @callback
     def _debounce_window(self, zone: Zone) -> None:
@@ -366,6 +414,7 @@ class HeatingController:
             eco_relative=zone.eco_relative,
             away_eco_heating=self._away_eco,
             window_open=zone.window_open,
+            bed_occupied=self.bed_occupied and zone.follow_bed,
             persons_home=persons_home,
             schedule_on=schedule is not None and schedule.state == STATE_ON,
             winter=self.flags[const.FLAG_WINTER],

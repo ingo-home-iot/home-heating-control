@@ -44,6 +44,10 @@ Du brauchst: einen Sensor mit der **Basis-Solltemperatur**, einen **Außentemper
 **Zeitplan** (`schedule`), die **Personen** und Thermostate (`climate`) in Bereichen. Optional je Raum ein
 Fenster-/Türkontakt. Die Zonen legt die Einrichtung anhand der Bereiche an, später kannst du sie ändern.
 
+### Bett-Sensor (optional, ab 0.1.12)
+
+In den allgemeinen Einstellungen kannst du einen **Bett-Sensor** (`binary_sensor` oder `input_boolean`, „an" = alle im Bett) wählen und eine **Wartezeit** (Standard 10 Minuten). Je Zone schaltest du **„Folgt dem Bett"** ein (Standard: aus). Ist das Bett belegt, wird der Zeitplan in diesen Zonen unterbrochen und mit ECO-Temperatur geheizt (Grund `bed_eco`). Party und „Komfort dauerhaft" haben Vorrang. Ohne Bett-Sensor ändert sich nichts.
+
 ## Entwicklung
 
 ```

@@ -56,4 +56,5 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
             "comfort_temperature": zone.comfort_temp,
             "eco_temperature": zone.eco_temp,
             "window_open": zone.window_open,
+            "bed_occupied": self.controller.bed_occupied and zone.follow_bed,
         }
