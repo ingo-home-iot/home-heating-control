@@ -24,9 +24,12 @@ from .const import (
     CONF_AREAS,
     CONF_AWAY_ECO,
     CONF_BASE_TEMP,
+    CONF_BED,
+    CONF_BED_DELAY,
     CONF_COMFORT_OFFSET,
     CONF_ECO_OFFSET,
     CONF_ECO_RELATIVE,
+    CONF_FOLLOW_BED,
     CONF_FROST_THRESHOLD,
     CONF_OUTDOOR_TEMP,
     CONF_PERSONS,
@@ -34,6 +37,7 @@ from .const import (
     CONF_SCHEDULE,
     CONF_THERMOSTATS,
     CONF_WINDOW,
+    DEFAULT_BED_DELAY,
     DEFAULT_ECO_OFFSET,
     DEFAULT_FROST_THRESHOLD,
     DEFAULT_REACTION_TIME,
@@ -111,6 +115,22 @@ def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
                     unit_of_measurement="s",
                 )
             ),
+            vol.Optional(
+                CONF_BED, description={"suggested_value": defaults.get(CONF_BED)}
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=["binary_sensor", "input_boolean"])
+            ),
+            vol.Required(
+                CONF_BED_DELAY, default=defaults.get(CONF_BED_DELAY, DEFAULT_BED_DELAY)
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=120,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="min",
+                )
+            ),
         }
     )
 
@@ -164,9 +184,7 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
                     self.hass.config_entries.async_add_subentry(
                         entry, _zone_subentry(candidate)
                     )
-                return self.async_update_reload_and_abort(
-                    entry, data_updates=self._global
-                )
+                return self.async_update_reload_and_abort(entry, data=self._global)
             return self.async_create_entry(
                 title="Home Heating Control",
                 data=self._global,
@@ -205,7 +223,10 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
                 for sub in entry.subentries.values()
                 for thermostat in sub.data.get(CONF_THERMOSTATS, [])
             }
-            self._global = user_input
+            # Optionale Felder (Bett) bleiben nicht stehen, wenn sie geleert wurden
+            self._global = {
+                key: value for key, value in entry.data.items() if key != CONF_BED
+            } | user_input
             # Räume überspringen, die schon eine Zone haben (auch von Hand angelegte)
             self._candidates = {
                 c.area_id: c
@@ -214,7 +235,7 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
             }
             if self._candidates:
                 return await self.async_step_areas()
-            return self.async_update_reload_and_abort(entry, data_updates=user_input)
+            return self.async_update_reload_and_abort(entry, data=self._global)
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=_global_schema(dict(entry.data)),
@@ -273,6 +294,9 @@ def _zone_schema(defaults: dict[str, Any]) -> vol.Schema:
             ): _offset_selector(),
             vol.Required(
                 CONF_ECO_RELATIVE, default=defaults.get(CONF_ECO_RELATIVE, False)
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_FOLLOW_BED, default=defaults.get(CONF_FOLLOW_BED, False)
             ): selector.BooleanSelector(),
         }
     )

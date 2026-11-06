@@ -270,3 +270,38 @@ def test_party_temperature_does_not_override_open_window_or_disabled_zone() -> N
         decide(zone(party=True, party_temp=24, window_open=True)).mode is HvacTarget.OFF
     )
     assert decide(zone(party=True, party_temp=24, enabled=False)).mode is HvacTarget.OFF
+
+
+def test_bed_occupied_interrupts_schedule_comfort() -> None:
+    result = decide(zone(schedule_on=True, bed_occupied=True))
+    assert result.mode is HvacTarget.HEAT
+    assert result.reason is Reason.BED_ECO
+    assert result.temperature == eco_temperature(zone(eco_offset=0.0))
+
+
+def test_bed_occupied_without_schedule_stays_normal_eco() -> None:
+    assert (
+        decide(zone(schedule_on=False, bed_occupied=True)).reason
+        is Reason.SCHEDULE_OFF_ECO
+    )
+
+
+def test_party_beats_bed() -> None:
+    result = decide(zone(party=True, bed_occupied=True))
+    assert result.reason is Reason.COMFORT_FORCED
+    assert result.temperature == 22
+
+
+def test_comfort_always_beats_bed() -> None:
+    result = decide(zone(comfort_always=True, bed_occupied=True))
+    assert result.reason is Reason.COMFORT_FORCED
+
+
+def test_window_open_beats_bed() -> None:
+    result = decide(zone(window_open=True, schedule_on=True, bed_occupied=True))
+    assert result.reason is Reason.WINDOW_OPEN
+
+
+def test_away_beats_bed_reason() -> None:
+    result = decide(zone(persons_home=0, schedule_on=True, bed_occupied=True))
+    assert result.reason is Reason.AWAY_ECO

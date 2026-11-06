@@ -22,7 +22,9 @@ TRV = "climate.trv_bad"
 WINDOW = "binary_sensor.fenster_bad"
 
 
-def make_entry() -> MockConfigEntry:
+def make_entry(
+    global_extra: dict | None = None, zone_extra: dict | None = None
+) -> MockConfigEntry:
     return MockConfigEntry(
         domain=const.DOMAIN,
         unique_id=const.DOMAIN,
@@ -34,6 +36,7 @@ def make_entry() -> MockConfigEntry:
             const.CONF_FROST_THRESHOLD: 5,
             const.CONF_AWAY_ECO: True,
             const.CONF_REACTION_TIME: 0,
+            **(global_extra or {}),
         },
         subentries_data=[
             ConfigSubentryData(
@@ -47,6 +50,7 @@ def make_entry() -> MockConfigEntry:
                     const.CONF_COMFORT_OFFSET: -1,
                     const.CONF_ECO_OFFSET: -3,
                     const.CONF_ECO_RELATIVE: False,
+                    **(zone_extra or {}),
                 },
             )
         ],
@@ -62,9 +66,14 @@ def set_world(hass: HomeAssistant, *, hvac="heat", target=20) -> None:
     hass.states.async_set(TRV, hvac, {"temperature": target})
 
 
-async def setup(hass: HomeAssistant, **world):
+async def setup(
+    hass: HomeAssistant,
+    global_extra: dict | None = None,
+    zone_extra: dict | None = None,
+    **world,
+):
     set_world(hass, **world)
-    entry = make_entry()
+    entry = make_entry(global_extra, zone_extra)
     entry.add_to_hass(hass)
     modes = async_mock_service(hass, "climate", "set_hvac_mode")
     temps = async_mock_service(hass, "climate", "set_temperature")
@@ -344,3 +353,83 @@ async def test_eco_und_komfort_dauerhaft_schliessen_sich_aus(
         await hass.async_block_till_done(wait_background_tasks=True)
         assert hass.states.get(on).state == "on"
         assert hass.states.get(off).state == "off"
+
+
+BED = "binary_sensor.bett_belegt"
+
+
+async def _setup_bed(hass: HomeAssistant, *, follow: bool = True, bed: str = "off"):
+    hass.states.async_set(BED, bed)
+    entry, _modes, _temps = await setup(
+        hass,
+        global_extra={const.CONF_BED: BED, const.CONF_BED_DELAY: 10},
+        zone_extra={const.CONF_FOLLOW_BED: follow},
+    )
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    return entry
+
+
+async def test_bed_occupied_interrupts_schedule_after_delay(
+    hass: HomeAssistant,
+) -> None:
+    """Bett belegt: erst nach 10 Minuten ECO (Basis 21, ECO -3 = 18)."""
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    await _setup_bed(hass)
+    assert hass.states.get("sensor.bad_decision").state == "schedule_comfort"
+
+    hass.states.async_set(BED, "on")
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=9))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert hass.states.get("sensor.bad_decision").state == "schedule_comfort"
+
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=10, seconds=5))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    state = hass.states.get("sensor.bad_decision")
+    assert state.state == "bed_eco"
+    assert state.attributes["target_temperature"] == 18
+    assert state.attributes["bed_occupied"] is True
+
+
+async def test_bed_short_absence_is_ignored(hass: HomeAssistant) -> None:
+    """Kurz aufstehen (unter der Wartezeit) ändert nichts."""
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    await _setup_bed(hass)
+    hass.states.async_set(BED, "on")
+    await hass.async_block_till_done()
+    hass.states.async_set(BED, "off")
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=11))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert hass.states.get("sensor.bad_decision").state == "schedule_comfort"
+
+
+async def test_bed_state_applies_immediately_at_start(hass: HomeAssistant) -> None:
+    """Nach einem HA-Start gilt der aktuelle Bett-Zustand sofort."""
+    await _setup_bed(hass, bed="on")
+    assert hass.states.get("sensor.bad_decision").state == "bed_eco"
+
+
+async def test_bed_ignored_for_zone_that_does_not_follow(hass: HomeAssistant) -> None:
+    """Zone ohne \"Folgt dem Bett\" bleibt im Komfort."""
+    await _setup_bed(hass, follow=False, bed="on")
+    state = hass.states.get("sensor.bad_decision")
+    assert state.state == "schedule_comfort"
+    assert state.attributes["bed_occupied"] is False
+
+
+async def test_without_bed_entity_nothing_changes(hass: HomeAssistant) -> None:
+    """Bestands-Konfiguration ohne Bett-Sensor verhält sich wie vorher."""
+    entry, _, _ = await setup(hass)
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.bad_decision").state == "schedule_comfort"

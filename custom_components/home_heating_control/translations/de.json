@@ -11,7 +11,9 @@
           "person_entities": "Personen",
           "frost_threshold": "Frostgrenze",
           "away_eco_heating": "Bei Abwesenheit mit ECO-Temperatur weiterheizen",
-          "window_reaction_time": "Reaktionszeit Fenster"
+          "window_reaction_time": "Reaktionszeit Fenster",
+          "bed_entity": "Bett-Sensor",
+          "bed_delay": "Bett: Wartezeit"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -20,7 +22,9 @@
           "person_entities": "Ist keine der Personen zu Hause, wird nur ECO geheizt.",
           "frost_threshold": "Bei dieser Außentemperatur oder kälter wird auch bei ausgeschalteter ECO-Heizung geheizt (nur im Winterbetrieb).",
           "away_eco_heating": "Aus: Niemand zu Hause bedeutet Heizung aus (außer Frostschutz).",
-          "window_reaction_time": "Sekunden, die ein Fenster offen sein muss, bevor die Heizung ausgeht. 0 = sofort."
+          "window_reaction_time": "Sekunden, die ein Fenster offen sein muss, bevor die Heizung ausgeht. 0 = sofort.",
+          "bed_entity": "Optional. „An“ = alle im Bett (z. B. Bettwaage). Wirkt nur in Zonen mit „Folgt dem Bett“.",
+          "bed_delay": "Minuten, die der Bett-Zustand gleich bleiben muss, bevor er gilt (kurzes Aufstehen zählt nicht)."
         }
       },
       "reconfigure": {
@@ -32,7 +36,9 @@
           "person_entities": "Personen",
           "frost_threshold": "Frostgrenze",
           "away_eco_heating": "Bei Abwesenheit mit ECO-Temperatur weiterheizen",
-          "window_reaction_time": "Reaktionszeit Fenster"
+          "window_reaction_time": "Reaktionszeit Fenster",
+          "bed_entity": "Bett-Sensor",
+          "bed_delay": "Bett: Wartezeit"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -41,7 +47,9 @@
           "person_entities": "Ist keine der Personen zu Hause, wird nur ECO geheizt.",
           "frost_threshold": "Bei dieser Außentemperatur oder kälter wird auch bei ausgeschalteter ECO-Heizung geheizt (nur im Winterbetrieb).",
           "away_eco_heating": "Aus: Niemand zu Hause bedeutet Heizung aus (außer Frostschutz).",
-          "window_reaction_time": "Sekunden, die ein Fenster offen sein muss, bevor die Heizung ausgeht. 0 = sofort."
+          "window_reaction_time": "Sekunden, die ein Fenster offen sein muss, bevor die Heizung ausgeht. 0 = sofort.",
+          "bed_entity": "Optional. „An“ = alle im Bett (z. B. Bettwaage). Wirkt nur in Zonen mit „Folgt dem Bett“.",
+          "bed_delay": "Minuten, die der Bett-Zustand gleich bleiben muss, bevor er gilt (kurzes Aufstehen zählt nicht)."
         }
       },
       "areas": {
@@ -70,13 +78,15 @@
             "window_entity": "Fenstersensor",
             "comfort_offset": "Abweichung Komfort",
             "eco_offset": "Abweichung ECO",
-            "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung"
+            "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung",
+            "follow_bed": "Folgt dem Bett"
           },
           "data_description": {
             "window_entity": "Optional. Fenster offen = Thermostate aus.",
             "comfort_offset": "Wird zur Basis-Solltemperatur addiert, z. B. −1 für das Bad.",
             "eco_offset": "Gilt bei Abwesenheit, außerhalb des Zeitplans oder bei ECO.",
-            "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert."
+            "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert.",
+            "follow_bed": "Liegen alle im Bett, wird der Zeitplan unterbrochen und ECO geheizt. Partys und „Komfort dauerhaft“ haben Vorrang."
           }
         },
         "reconfigure": {
@@ -87,13 +97,15 @@
             "window_entity": "Fenstersensor",
             "comfort_offset": "Abweichung Komfort",
             "eco_offset": "Abweichung ECO",
-            "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung"
+            "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung",
+            "follow_bed": "Folgt dem Bett"
           },
           "data_description": {
             "window_entity": "Optional. Fenster offen = Thermostate aus.",
             "comfort_offset": "Wird zur Basis-Solltemperatur addiert, z. B. −1 für das Bad.",
             "eco_offset": "Gilt bei Abwesenheit, außerhalb des Zeitplans oder bei ECO.",
-            "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert."
+            "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert.",
+            "follow_bed": "Liegen alle im Bett, wird der Zeitplan unterbrochen und ECO geheizt. Partys und „Komfort dauerhaft“ haben Vorrang."
           }
         }
       },
@@ -124,7 +136,8 @@
           "schedule_off_eco": "Außerhalb Zeitplan (ECO)",
           "zone_disabled": "Zone ausgeschaltet",
           "zone_frost_protection": "Ausgeschaltet (Frostschutz)",
-          "party": "Party"
+          "party": "Party",
+          "bed_eco": "Bett belegt (ECO)"
         }
       }
     },

@@ -31,6 +31,7 @@ class Reason(StrEnum):
     AWAY_ECO = "away_eco"
     SCHEDULE_COMFORT = "schedule_comfort"
     COMFORT_FORCED = "comfort_forced"
+    BED_ECO = "bed_eco"
     SCHEDULE_OFF_ECO = "schedule_off_eco"
 
 
@@ -46,6 +47,7 @@ class ZoneInputs:
     eco_relative: bool = False
     away_eco_heating: bool = True
     window_open: bool = False
+    bed_occupied: bool = False
     persons_home: int = 0
     schedule_on: bool = False
     winter: bool = False
@@ -127,7 +129,11 @@ def decide(inputs: ZoneInputs) -> Decision:
     comfort_wanted = (
         not inputs.eco
         and someone_home
-        and (inputs.schedule_on or inputs.party or inputs.comfort_always)
+        and (
+            (inputs.schedule_on and not inputs.bed_occupied)
+            or inputs.party
+            or inputs.comfort_always
+        )
     )
 
     if comfort_wanted and inputs.party and inputs.party_temp > 0:
@@ -146,6 +152,8 @@ def decide(inputs: ZoneInputs) -> Decision:
             reason = Reason.FROST_PROTECTION
         elif not someone_home:
             reason = Reason.AWAY_ECO
+        elif inputs.schedule_on and inputs.bed_occupied:
+            reason = Reason.BED_ECO
         else:
             reason = Reason.SCHEDULE_OFF_ECO
 

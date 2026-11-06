@@ -50,6 +50,7 @@ nur einen Wert, beide sind immer gleich.
 ## Eingänge je Zone
 
 Basis-Solltemperatur, Komfort-Offset, Eco-Offset, Fensterkontakt (optional),
+Bett-Sensor (optional, mit „Folgt dem Bett" je Zone),
 Personen zu Hause (Anzahl), Zeitplan (an/aus), Außentemperatur, Frostgrenze,
 Option „bei Abwesenheit mit Eco heizen" (Standard: ja).
 
@@ -69,6 +70,12 @@ Reihenfolge, die erste zutreffende Regel gilt:
 - **Komfort**, wenn: kein ECO und (Zeitplan an oder Party oder Komfort dauerhaft)
   und mindestens eine Person zu Hause.
 - Sonst **Eco**-Temperatur (ECO aktiv, niemand zu Hause oder Zeitplan aus).
+- **Bett** (optional, ab 0.1.12): Ist ein Bett-Sensor eingestellt und für die Zone
+  „Folgt dem Bett" gewählt, unterbricht ein belegtes Bett den **Zeitplan**: die Zone heizt
+  ECO (Grund `bed_eco`). Party und „Komfort dauerhaft" haben Vorrang. Der Bett-Zustand
+  wirkt erst, wenn er die eingestellte Wartezeit (Standard 10 min, in beide Richtungen)
+  unverändert war; nach einem HA-Start gilt der aktuelle Zustand sofort. Fenster offen,
+  Heizung aus und Abwesenheit bleiben unverändert.
 
 ## Bewusste Abweichungen von Bestandsverhalten
 
