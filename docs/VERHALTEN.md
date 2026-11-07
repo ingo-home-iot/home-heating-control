@@ -84,6 +84,16 @@ Reihenfolge, die erste zutreffende Regel gilt:
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
+## Probleme und Meldungen (ab 0.2.0)
+
+Je Zone gibt es einen Diagnose-Sensor **Problem** (`binary_sensor`, an = Problem, Attribut
+`problems`). Arten: `thermostat_unavailable` (Thermostat seit über 30 Minuten nicht erreichbar),
+`command_failed` (ein Thermostat hat einen Befehl abgelehnt, verschwindet beim nächsten
+erfolgreichen Senden), `window_open_long` (nur wenn „Meldung: Fenster offen nach" > 0).
+Geprüft wird jede Minute. Ist ein **notify-Dienst** eingestellt, kommt bei jedem neu
+auftretenden Problem eine Meldung, nicht wiederholt. Ein abgelehnter Befehl stoppt die
+übrigen Zonen nicht mehr.
+
 ## Bewusste Abweichungen von Bestandsverhalten
 
 1. Ist die Basis-Solltemperatur nicht verfügbar, wird **keine** Temperatur gesendet

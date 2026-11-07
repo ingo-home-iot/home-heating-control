@@ -15,7 +15,9 @@
           "bed_entity": "Bed sensor",
           "bed_delay": "Bed: delay",
           "preheat_minutes_per_kelvin": "Preheat: minutes per degree",
-          "preheat_max_minutes": "Preheat: maximum time"
+          "preheat_max_minutes": "Preheat: maximum time",
+          "notify_service": "Send notifications to",
+          "window_open_alert": "Notify: window open after"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -28,7 +30,9 @@
           "bed_entity": "Optional. On = everyone in bed (e.g. bed scale). Only affects zones with “Follows bed”.",
           "bed_delay": "Minutes the bed state has to stay the same before it counts (getting up briefly is ignored).",
           "preheat_minutes_per_kelvin": "Roughly how long the room needs to get 1 °C warmer. This decides how early before the schedule starts heating begins.",
-          "preheat_max_minutes": "The earliest heating may start before the schedule begins."
+          "preheat_max_minutes": "The earliest heating may start before the schedule begins.",
+          "notify_service": "Optional. Name of the notify service, e.g. notify.mobile_app_my_phone. Reported: thermostat unreachable for over 30 minutes, thermostat rejects a command, window open too long.",
+          "window_open_alert": "Minutes after which an open window is reported. 0 = never."
         }
       },
       "reconfigure": {
@@ -44,7 +48,9 @@
           "bed_entity": "Bed sensor",
           "bed_delay": "Bed: delay",
           "preheat_minutes_per_kelvin": "Preheat: minutes per degree",
-          "preheat_max_minutes": "Preheat: maximum time"
+          "preheat_max_minutes": "Preheat: maximum time",
+          "notify_service": "Send notifications to",
+          "window_open_alert": "Notify: window open after"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -57,7 +63,9 @@
           "bed_entity": "Optional. On = everyone in bed (e.g. bed scale). Only affects zones with “Follows bed”.",
           "bed_delay": "Minutes the bed state has to stay the same before it counts (getting up briefly is ignored).",
           "preheat_minutes_per_kelvin": "Roughly how long the room needs to get 1 °C warmer. This decides how early before the schedule starts heating begins.",
-          "preheat_max_minutes": "The earliest heating may start before the schedule begins."
+          "preheat_max_minutes": "The earliest heating may start before the schedule begins.",
+          "notify_service": "Optional. Name of the notify service, e.g. notify.mobile_app_my_phone. Reported: thermostat unreachable for over 30 minutes, thermostat rejects a command, window open too long.",
+          "window_open_alert": "Minutes after which an open window is reported. 0 = never."
         }
       },
       "areas": {
@@ -189,6 +197,11 @@
       },
       "zone_eco_offset": {
         "name": "ECO reduction"
+      }
+    },
+    "binary_sensor": {
+      "problem": {
+        "name": "Problem"
       }
     }
   }

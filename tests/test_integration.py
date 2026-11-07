@@ -530,3 +530,94 @@ async def test_preheat_off_for_zone_without_option(hass: HomeAssistant) -> None:
     sensor = hass.states.get("sensor.bad_decision")
     assert sensor is not None
     assert sensor.state == "schedule_off_eco"
+
+
+async def test_rejected_command_sets_problem_and_notifies(hass: HomeAssistant) -> None:
+    """Das Thermostat lehnt die Temperatur ab: Problem-Sensor an, Meldung gesendet."""
+    from homeassistant.exceptions import ServiceValidationError
+
+    notes = async_mock_service(hass, "notify", "handy")
+    entry, _, _ = await setup(
+        hass, global_extra={const.CONF_NOTIFY: "notify.handy"}, target=15
+    )
+
+    async def reject(call) -> None:
+        raise ServiceValidationError("not valid")
+
+    hass.services.async_register("climate", "set_temperature", reject)
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    problem = hass.states.get("binary_sensor.bad_problem")
+    assert problem is not None
+    assert problem.state == "on"
+    assert problem.attributes["problems"] == [const.PROBLEM_COMMAND]
+    assert len(notes) == 1
+    assert "Bad" in notes[0].data["message"]
+
+
+async def test_problem_without_notify_service_only_sets_sensor(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Ohne notify-Dienst bleibt es beim Sensor. Thermostat 31 Minuten weg."""
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    await setup(hass)
+    hass.states.async_set(TRV, "unavailable")
+    freezer.tick(timedelta(minutes=31))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    problem = hass.states.get("binary_sensor.bad_problem")
+    assert problem is not None
+    assert problem.state == "on"
+    assert problem.attributes["problems"] == [const.PROBLEM_UNAVAILABLE]
+
+
+async def test_short_unavailable_is_not_a_problem(hass: HomeAssistant, freezer) -> None:
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    await setup(hass)
+    hass.states.async_set(TRV, "unavailable")
+    freezer.tick(timedelta(minutes=10))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    problem = hass.states.get("binary_sensor.bad_problem")
+    assert problem is not None
+    assert problem.state == "off"
+
+
+async def test_window_open_too_long_is_reported_once(
+    hass: HomeAssistant, freezer
+) -> None:
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    notes = async_mock_service(hass, "notify", "handy")
+    await setup(
+        hass,
+        global_extra={const.CONF_NOTIFY: "notify.handy", const.CONF_WINDOW_ALERT: 20},
+    )
+    hass.states.async_set(WINDOW, "on")
+    for _ in range(3):
+        freezer.tick(timedelta(minutes=10))
+        async_fire_time_changed(hass, dt_util.utcnow())
+        await hass.async_block_till_done()
+    problem = hass.states.get("binary_sensor.bad_problem")
+    assert problem is not None
+    assert problem.attributes["problems"] == [const.PROBLEM_WINDOW]
+    assert len(notes) == 1
+
+
+async def test_window_alert_off_by_default(hass: HomeAssistant, freezer) -> None:
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    await setup(hass)
+    hass.states.async_set(WINDOW, "on")
+    freezer.tick(timedelta(hours=3))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    problem = hass.states.get("binary_sensor.bad_problem")
+    assert problem is not None
+    assert problem.state == "off"
