@@ -104,7 +104,8 @@
             "eco_offset": "Abweichung ECO",
             "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung",
             "follow_bed": "Folgt dem Bett",
-            "preheat": "Vorheizen"
+            "preheat": "Vorheizen",
+            "room_temp_entity": "Raumtemperatur-Sensor"
           },
           "data_description": {
             "window_entity": "Optional. Fenster offen = Thermostate aus.",
@@ -112,7 +113,8 @@
             "eco_offset": "Gilt bei Abwesenheit, außerhalb des Zeitplans oder bei ECO.",
             "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert.",
             "follow_bed": "Liegen alle im Bett, wird der Zeitplan unterbrochen und ECO geheizt. Partys und „Komfort dauerhaft“ haben Vorrang.",
-            "preheat": "Heizt vor dem Zeitplanstart schon auf Komfort, wenn der Raum sonst nicht rechtzeitig warm wird (nur wenn jemand zu Hause ist)."
+            "preheat": "Heizt vor dem Zeitplanstart schon auf Komfort, wenn der Raum sonst nicht rechtzeitig warm wird (nur wenn jemand zu Hause ist).",
+            "room_temp_entity": "Optional. Zusätzlicher Fühler im Raum. Wird beim Vorheizen statt der Thermostat-Messung genommen und als Vergleichswert im Entscheidungssensor gezeigt. Geregelt wird nicht danach."
           }
         },
         "reconfigure": {
@@ -125,7 +127,8 @@
             "eco_offset": "Abweichung ECO",
             "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung",
             "follow_bed": "Folgt dem Bett",
-            "preheat": "Vorheizen"
+            "preheat": "Vorheizen",
+            "room_temp_entity": "Raumtemperatur-Sensor"
           },
           "data_description": {
             "window_entity": "Optional. Fenster offen = Thermostate aus.",
@@ -133,7 +136,8 @@
             "eco_offset": "Gilt bei Abwesenheit, außerhalb des Zeitplans oder bei ECO.",
             "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert.",
             "follow_bed": "Liegen alle im Bett, wird der Zeitplan unterbrochen und ECO geheizt. Partys und „Komfort dauerhaft“ haben Vorrang.",
-            "preheat": "Heizt vor dem Zeitplanstart schon auf Komfort, wenn der Raum sonst nicht rechtzeitig warm wird (nur wenn jemand zu Hause ist)."
+            "preheat": "Heizt vor dem Zeitplanstart schon auf Komfort, wenn der Raum sonst nicht rechtzeitig warm wird (nur wenn jemand zu Hause ist).",
+            "room_temp_entity": "Optional. Zusätzlicher Fühler im Raum. Wird beim Vorheizen statt der Thermostat-Messung genommen und als Vergleichswert im Entscheidungssensor gezeigt. Geregelt wird nicht danach."
           }
         }
       },

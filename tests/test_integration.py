@@ -844,3 +844,57 @@ async def test_heating_time_resets_next_day(hass: HomeAssistant, freezer) -> Non
     sensor = hass.states.get("sensor.bad_heating_time_today")
     assert sensor is not None
     assert float(sensor.state) == 0
+
+
+async def test_room_sensor_is_shown_and_used_for_preheat(hass: HomeAssistant) -> None:
+    """Raumfühler 17 °C, Thermostat meldet 20 °C: Vorheizen rechnet mit 17 (3 K × 20 = 60 min)."""
+    from homeassistant.util import dt as dt_util
+
+    hass.states.async_set("sensor.raum_bad", "17")
+    entry, _, _ = await setup(
+        hass,
+        zone_extra={
+            const.CONF_PREHEAT: True,
+            const.CONF_ROOM_SENSOR: "sensor.raum_bad",
+        },
+        target=15,
+    )
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    hass.states.async_set(TRV, "heat", {"temperature": 15, "current_temperature": 20})
+    hass.states.async_set(
+        SCHED, "off", {"next_event": dt_util.utcnow() + timedelta(minutes=50)}
+    )
+    await hass.async_block_till_done()
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.state == "preheat"
+    assert sensor.attributes["room_temperature"] == 17
+    assert sensor.attributes["thermostat_temperature"] == 20
+
+
+async def test_room_sensor_unavailable_falls_back_to_thermostat(
+    hass: HomeAssistant,
+) -> None:
+    from homeassistant.util import dt as dt_util
+
+    hass.states.async_set("sensor.raum_bad", "unavailable")
+    entry, _, _ = await setup(
+        hass,
+        zone_extra={
+            const.CONF_PREHEAT: True,
+            const.CONF_ROOM_SENSOR: "sensor.raum_bad",
+        },
+        target=15,
+    )
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    hass.states.async_set(TRV, "heat", {"temperature": 15, "current_temperature": 18})
+    hass.states.async_set(
+        SCHED, "off", {"next_event": dt_util.utcnow() + timedelta(minutes=30)}
+    )
+    await hass.async_block_till_done()
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.state == "preheat"
+    assert sensor.attributes["room_temperature"] is None

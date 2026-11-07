@@ -84,6 +84,15 @@ Reihenfolge, die erste zutreffende Regel gilt:
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
+## Raumtemperatur-Sensor (optional, ab 0.3.0)
+
+Je Zone lässt sich ein zusätzlicher Temperatursensor angeben. Er **regelt nichts**. Er wird
+nur (1) beim Vorheizen statt der Thermostat-Messung als Raumtemperatur genommen und (2) im
+Entscheidungssensor als Attribut `room_temperature` neben `thermostat_temperature` gezeigt,
+damit man beide vergleichen kann. Ist der Sensor nicht verfügbar, gilt wieder die
+Thermostat-Messung. Hintergrund: Das Thermostat misst am Heizkörper und liest oft zu warm;
+in offenen Wohnungen zeigt ein Fühler zudem die Luft mehrerer Räume.
+
 ## Heizzeit je Zone (ab 0.2.0)
 
 Je Zone gibt es den Sensor **Heizzeit heute** (Stunden, `total` mit täglichem Neubeginn um
