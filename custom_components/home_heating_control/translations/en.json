@@ -168,6 +168,9 @@
           "bed_eco": "Bed occupied (ECO)",
           "preheat": "Preheating"
         }
+      },
+      "heating_time": {
+        "name": "Heating time today"
       }
     },
     "switch": {

@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field, replace
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -65,6 +65,8 @@ class Zone:
     eco_temp: int | None = None
     preheat_event: datetime | None = None
     command_failed: bool = False
+    heating_seconds: float = 0.0
+    heating_day: date | None = None
     manual_until: datetime | None = None
     manual_reason: Reason | None = None
     manual_timer: CALLBACK_TYPE | None = field(default=None, repr=False)
@@ -133,6 +135,7 @@ class HeatingController:
         self.bed_occupied = False
         self._bed_timer: CALLBACK_TYPE | None = None
 
+        self._last_account: datetime | None = None
         self.flags: dict[str, bool] = dict.fromkeys(const.FLAGS, False)
         self.correction: float = 0.0
         self.party_hours: float = float(const.DEFAULT_PARTY_HOURS)
@@ -338,7 +341,37 @@ class HeatingController:
     def _handle_watchdog(self, _now: datetime) -> None:
         """Minütlich auf Probleme prüfen (nicht erreichbar, Fenster lange offen)."""
         if self._started:
+            self._account_heating(_now)
             self._update_problems()
+
+    @callback
+    def _account_heating(self, now: datetime) -> None:
+        """Heizzeit je Zone aufsummieren: Zeit, in der ein Thermostat aktiv heizt."""
+        today = dt_util.as_local(now).date()
+        last, self._last_account = self._last_account, now
+        elapsed = 0.0 if last is None else min((now - last).total_seconds(), 300.0)
+        for zone in self.zones.values():
+            if zone.heating_day != today:
+                zone.heating_day = today
+                zone.heating_seconds = 0.0
+            if elapsed > 0 and self._zone_heating(zone):
+                zone.heating_seconds += elapsed
+        async_dispatcher_send(self.hass, const.signal_update(self.entry.entry_id))
+
+    def _zone_heating(self, zone: Zone) -> bool:
+        for entity_id in zone.thermostats:
+            state = self.hass.states.get(entity_id)
+            if state is not None and state.attributes.get("hvac_action") == "heating":
+                return True
+        return False
+
+    @callback
+    def restore_heating(self, subentry_id: str, hours: float, day: date) -> None:
+        """Heizzeit nach einem Neustart fortsetzen (nur vom selben Tag)."""
+        zone = self.zones[subentry_id]
+        if day == dt_util.as_local(dt_util.utcnow()).date():
+            zone.heating_seconds = hours * 3600
+            zone.heating_day = day
 
     @callback
     def _update_problems(self) -> None:

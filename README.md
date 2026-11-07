@@ -52,6 +52,10 @@ In den allgemeinen Einstellungen kannst du einen **Bett-Sensor** (`binary_sensor
 
 Je Zone schaltest du **„Vorheizen"** ein (Standard: aus). Dann beginnt die Zone schon vor dem nächsten Zeitplanstart, auf Komfort zu heizen, damit der Raum rechtzeitig warm ist. In den allgemeinen Einstellungen legst du fest, wie viele **Minuten ein Grad** Erwärmung etwa dauert (Standard 20) und die **Höchstzeit** (Standard 90 Minuten). Beispiel: Raum 18 °C, Komfort 20 °C, 20 min/Grad → Start 40 Minuten vor dem Zeitplanstart. Der Grund steht dann als `preheat` im Entscheidungssensor. Ohne Schalter ändert sich nichts.
 
+### Heizzeit je Zone (ab 0.2.0)
+
+Der Sensor **Heizzeit heute** zeigt je Zone, wie viele Stunden die Thermostate heute aktiv geheizt haben (Beginn jeden Tag um Mitternacht). So siehst du, was Absenkungen und Vorheizen tatsächlich bewirken. Das Statistik-Dashboard von Home Assistant kann den Wert über die Tage vergleichen.
+
 ### Urlaub mit Rückkehr-Datum (ab 0.2.0)
 
 Am Hauptgerät gibt es den Schalter **Urlaub** und das Feld **Rückkehr**. Im Urlaub wird nur noch auf ECO-Temperatur (oder Frostschutz) geheizt, auch wenn ein Handy zu Hause liegt. Ein paar Stunden vor der Rückkehr (Einstellung „Urlaub: Vorlauf vor Rückkehr", Standard 6 h) heizt die Steuerung wieder nach Zeitplan, damit es bei der Ankunft warm ist. Drei Stunden nach dem Rückkehr-Zeitpunkt endet der Urlaub von selbst. Ohne Rückkehr-Zeitpunkt dauert er, bis du ihn ausschaltest.
