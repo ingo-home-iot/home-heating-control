@@ -18,7 +18,8 @@
           "preheat_max_minutes": "Preheat: maximum time",
           "notify_service": "Send notifications to",
           "window_open_alert": "Notify: window open after",
-          "manual_override_minutes": "Respect manual changes for"
+          "manual_override_minutes": "Respect manual changes for",
+          "vacation_lead_hours": "Vacation: lead time before return"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -34,7 +35,8 @@
           "preheat_max_minutes": "The earliest heating may start before the schedule begins.",
           "notify_service": "Optional. Name of the notify service, e.g. notify.mobile_app_my_phone. Reported: thermostat unreachable for over 30 minutes, thermostat rejects a command, window open too long.",
           "window_open_alert": "Minutes after which an open window is reported. 0 = never.",
-          "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before."
+          "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before.",
+          "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule)."
         }
       },
       "reconfigure": {
@@ -53,7 +55,8 @@
           "preheat_max_minutes": "Preheat: maximum time",
           "notify_service": "Send notifications to",
           "window_open_alert": "Notify: window open after",
-          "manual_override_minutes": "Respect manual changes for"
+          "manual_override_minutes": "Respect manual changes for",
+          "vacation_lead_hours": "Vacation: lead time before return"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -69,7 +72,8 @@
           "preheat_max_minutes": "The earliest heating may start before the schedule begins.",
           "notify_service": "Optional. Name of the notify service, e.g. notify.mobile_app_my_phone. Reported: thermostat unreachable for over 30 minutes, thermostat rejects a command, window open too long.",
           "window_open_alert": "Minutes after which an open window is reported. 0 = never.",
-          "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before."
+          "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before.",
+          "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule)."
         }
       },
       "areas": {
@@ -184,6 +188,9 @@
       },
       "zone_enabled": {
         "name": "Heating"
+      },
+      "vacation": {
+        "name": "Vacation"
       }
     },
     "number": {
@@ -206,6 +213,11 @@
     "binary_sensor": {
       "problem": {
         "name": "Problem"
+      }
+    },
+    "datetime": {
+      "vacation_return": {
+        "name": "Return"
       }
     }
   }

@@ -84,6 +84,18 @@ Reihenfolge, die erste zutreffende Regel gilt:
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
+## Urlaub mit Rückkehr-Datum (ab 0.2.0)
+
+Der Schalter **Urlaub** und das Feld **Rückkehr** (Datum und Uhrzeit) stehen am Hauptgerät.
+Bei Urlaub gilt „niemand zu Hause": ECO (bzw. Frostschutz, wenn „bei Abwesenheit mit ECO
+weiterheizen" aus ist), egal was die Personen melden. Ab „Vorlauf vor Rückkehr" Stunden
+(Standard 6) **vor** dem Rückkehr-Zeitpunkt gilt „jemand kommt heim": die Zonen heizen wieder
+nach Zeitplan (mit Vorheizen, falls an). Drei Stunden **nach** dem Rückkehr-Zeitpunkt endet der
+Urlaub von selbst (Schalter geht aus), danach zählen wieder die echten Personen. Ohne
+Rückkehr-Zeitpunkt dauert der Urlaub, bis du den Schalter ausschaltest. Das Attribut `vacation`
+des Entscheidungssensors zeigt `off`, `away`, `returning` oder `over`. Der Zustand überlebt
+einen Neustart.
+
 ## Handverstellung am Thermostat (optional, ab 0.2.0)
 
 Ist in den allgemeinen Einstellungen „Handverstellung respektieren für" > 0 Minuten, erkennt

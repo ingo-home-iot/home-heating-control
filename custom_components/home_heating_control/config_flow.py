@@ -41,6 +41,7 @@ from .const import (
     CONF_REACTION_TIME,
     CONF_SCHEDULE,
     CONF_THERMOSTATS,
+    CONF_VACATION_LEAD,
     CONF_WINDOW,
     CONF_WINDOW_ALERT,
     DEFAULT_BED_DELAY,
@@ -50,6 +51,7 @@ from .const import (
     DEFAULT_PREHEAT_MAX,
     DEFAULT_PREHEAT_MIN_PER_K,
     DEFAULT_REACTION_TIME,
+    DEFAULT_VACATION_LEAD,
     DEFAULT_WINDOW_ALERT,
     DOMAIN,
     SUBENTRY_ZONE,
@@ -163,6 +165,18 @@ def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
                     step=5,
                     mode=selector.NumberSelectorMode.BOX,
                     unit_of_measurement="min",
+                )
+            ),
+            vol.Required(
+                CONF_VACATION_LEAD,
+                default=defaults.get(CONF_VACATION_LEAD, DEFAULT_VACATION_LEAD),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=72,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="h",
                 )
             ),
             vol.Required(

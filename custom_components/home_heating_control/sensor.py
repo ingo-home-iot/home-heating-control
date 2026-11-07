@@ -58,6 +58,7 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
             "window_open": zone.window_open,
             "bed_occupied": self.controller.bed_occupied and zone.follow_bed,
             "preheat": zone.preheat_event is not None,
+            "vacation": self.controller.vacation_phase(),
             "manual_override_until": None
             if zone.manual_until is None
             else zone.manual_until.isoformat(),
