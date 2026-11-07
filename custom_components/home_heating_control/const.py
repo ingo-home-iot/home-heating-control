@@ -14,6 +14,8 @@ CONF_AWAY_ECO = "away_eco_heating"
 CONF_REACTION_TIME = "window_reaction_time"
 CONF_BED = "bed_entity"
 CONF_BED_DELAY = "bed_delay"
+CONF_PREHEAT_MIN_PER_K = "preheat_minutes_per_kelvin"
+CONF_PREHEAT_MAX = "preheat_max_minutes"
 
 # Zonen (Subentry)
 SUBENTRY_ZONE = "zone"
@@ -23,6 +25,7 @@ CONF_COMFORT_OFFSET = "comfort_offset"
 CONF_ECO_OFFSET = "eco_offset"
 CONF_ECO_RELATIVE = "eco_relative"
 CONF_FOLLOW_BED = "follow_bed"
+CONF_PREHEAT = "preheat"
 CONF_AREA_ID = "area_id"
 CONF_AREAS = "areas"
 
@@ -38,6 +41,9 @@ FLAGS = (FLAG_WINTER, FLAG_PARTY, FLAG_COMFORT_ALWAYS, FLAG_ECO)
 DEFAULT_FROST_THRESHOLD = 5
 DEFAULT_REACTION_TIME = 3
 DEFAULT_BED_DELAY = 10  # Minuten, bis ein Wechsel des Bett-Zustands wirkt
+DEFAULT_PREHEAT_MIN_PER_K = 20  # Minuten Vorlauf je Kelvin Temperaturunterschied
+DEFAULT_PREHEAT_MAX = 90  # Minuten, so früh startet das Vorheizen höchstens
+PREHEAT_CHECK_INTERVAL = 5  # Minuten zwischen zwei Prüfungen
 DEFAULT_DISABLED_MIN_TEMP = 5  # °C; 0 = ausgeschaltete Zonen bleiben bei Frost aus
 DEFAULT_PARTY_HOURS = 4  # Stunden; 0 = Party endet nicht von selbst
 DEFAULT_PARTY_TEMP = 0  # °C; 0 = Party heizt auf die Komforttemperatur der Zone

@@ -48,6 +48,10 @@ Fenster-/Türkontakt. Die Zonen legt die Einrichtung anhand der Bereiche an, sp�
 
 In den allgemeinen Einstellungen kannst du einen **Bett-Sensor** (`binary_sensor` oder `input_boolean`, „an" = alle im Bett) wählen und eine **Wartezeit** (Standard 10 Minuten). Je Zone schaltest du **„Folgt dem Bett"** ein (Standard: aus). Ist das Bett belegt, wird der Zeitplan in diesen Zonen unterbrochen und mit ECO-Temperatur geheizt (Grund `bed_eco`). Party und „Komfort dauerhaft" haben Vorrang. Ohne Bett-Sensor ändert sich nichts.
 
+### Vorheizen (optional, ab 0.2.0)
+
+Je Zone schaltest du **„Vorheizen"** ein (Standard: aus). Dann beginnt die Zone schon vor dem nächsten Zeitplanstart, auf Komfort zu heizen, damit der Raum rechtzeitig warm ist. In den allgemeinen Einstellungen legst du fest, wie viele **Minuten ein Grad** Erwärmung etwa dauert (Standard 20) und die **Höchstzeit** (Standard 90 Minuten). Beispiel: Raum 18 °C, Komfort 20 °C, 20 min/Grad → Start 40 Minuten vor dem Zeitplanstart. Der Grund steht dann als `preheat` im Entscheidungssensor. Ohne Schalter ändert sich nichts.
+
 ## Entwicklung
 
 ```

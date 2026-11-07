@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -20,6 +20,7 @@ from homeassistant.helpers.event import (
     async_call_later,
     async_track_point_in_utc_time,
     async_track_state_change_event,
+    async_track_time_interval,
 )
 from homeassistant.helpers.start import async_at_started
 from homeassistant.util import dt as dt_util
@@ -50,6 +51,7 @@ class Zone:
     thermostats: list[str]
     window_entity: str | None
     follow_bed: bool
+    preheat: bool
     comfort_offset: float
     eco_offset: float
     eco_relative: bool
@@ -59,6 +61,7 @@ class Zone:
     decision: Decision | None = None
     comfort_temp: int | None = None
     eco_temp: int | None = None
+    preheat_event: datetime | None = None
     window_timer: CALLBACK_TYPE | None = field(default=None, repr=False)
 
 
@@ -99,6 +102,12 @@ class HeatingController:
         self._bed_delay: float = float(
             data.get(const.CONF_BED_DELAY, const.DEFAULT_BED_DELAY)
         )
+        self._preheat_min_per_k: float = float(
+            data.get(const.CONF_PREHEAT_MIN_PER_K, const.DEFAULT_PREHEAT_MIN_PER_K)
+        )
+        self._preheat_max: float = float(
+            data.get(const.CONF_PREHEAT_MAX, const.DEFAULT_PREHEAT_MAX)
+        )
         self.bed_occupied = False
         self._bed_timer: CALLBACK_TYPE | None = None
 
@@ -119,6 +128,7 @@ class HeatingController:
                 thermostats=list(sub[const.CONF_THERMOSTATS]),
                 window_entity=sub.get(const.CONF_WINDOW),
                 follow_bed=bool(sub.get(const.CONF_FOLLOW_BED, False)),
+                preheat=bool(sub.get(const.CONF_PREHEAT, False)),
                 comfort_offset=float(sub.get(const.CONF_COMFORT_OFFSET, 0)),
                 eco_offset=float(sub.get(const.CONF_ECO_OFFSET, 0)),
                 eco_relative=bool(sub.get(const.CONF_ECO_RELATIVE, False)),
@@ -154,6 +164,14 @@ class HeatingController:
                 self.hass, [self._outdoor_entity], self._handle_outdoor_change
             )
         )
+        if any(zone.preheat for zone in self.zones.values()):
+            self._unsubs.append(
+                async_track_time_interval(
+                    self.hass,
+                    self._handle_preheat_tick,
+                    timedelta(minutes=const.PREHEAT_CHECK_INTERVAL),
+                )
+            )
         self._unsubs.append(async_at_started(self.hass, self._handle_started))
 
     @callback
@@ -198,6 +216,11 @@ class HeatingController:
         if now != self._frost_active:
             self._frost_active = now
             self.request_update()
+
+    @callback
+    def _handle_preheat_tick(self, _now: datetime) -> None:
+        """Regelmäßig prüfen, ob das Vorheizen beginnen muss (der Zeitplan meldet das nicht)."""
+        self.request_update()
 
     def _bed_live(self) -> bool:
         if self._bed_entity is None:
@@ -405,7 +428,7 @@ class HeatingController:
     def _inputs(self, zone: Zone, persons_home: int) -> ZoneInputs:
         base = _float_state(self.hass, self._base_entity)
         schedule = self.hass.states.get(self._schedule_entity)
-        return ZoneInputs(
+        inputs = ZoneInputs(
             base_temp=None if base is None else base + self.correction,
             enabled=zone.enabled,
             disabled_min_temp=self.disabled_min_temp,
@@ -425,6 +448,52 @@ class HeatingController:
             outdoor_temp=_float_state(self.hass, self._outdoor_entity),
             frost_threshold=self._frost_threshold,
         )
+        if zone.preheat and self._preheat_due(zone, inputs, schedule):
+            inputs = replace(inputs, preheat=True)
+        return inputs
+
+    def _preheat_due(
+        self, zone: Zone, inputs: ZoneInputs, schedule: State | None
+    ) -> bool:
+        """Muss die Zone jetzt vorheizen, damit sie zum nächsten Zeitplanstart warm ist?
+
+        Die Vorlaufzeit ergibt sich aus dem Unterschied zwischen Komforttemperatur und
+        aktueller Raumtemperatur mal Minuten je Kelvin, höchstens aber der Maximalzeit.
+        Einmal gestartet, bleibt das Vorheizen bis zum Zeitplanstart (kein Flackern, wenn
+        der Raum schneller warm wird als angenommen).
+        """
+        if inputs.schedule_on or schedule is None:
+            zone.preheat_event = None
+            return False
+        if inputs.bed_occupied:
+            return False
+        next_event = _as_datetime(schedule.attributes.get("next_event"))
+        if next_event is None:
+            zone.preheat_event = None
+            return False
+        if zone.preheat_event == next_event:
+            return True
+        comfort = comfort_temperature(inputs)
+        current = self._zone_temperature(zone)
+        if comfort is None or current is None or current >= comfort:
+            return False
+        lead = min(self._preheat_max, (comfort - current) * self._preheat_min_per_k)
+        if next_event - dt_util.utcnow() > timedelta(minutes=lead):
+            return False
+        zone.preheat_event = next_event
+        return True
+
+    def _zone_temperature(self, zone: Zone) -> float | None:
+        """Mittlere Raumtemperatur der Thermostate (nur Thermostate mit Messwert)."""
+        values = []
+        for entity_id in zone.thermostats:
+            state = self.hass.states.get(entity_id)
+            if state is None:
+                continue
+            value = _float_attr(state.attributes.get("current_temperature"))
+            if value is not None:
+                values.append(value)
+        return sum(values) / len(values) if values else None
 
     @callback
     def request_update(self) -> None:
@@ -529,6 +598,16 @@ def _clamp_to_thermostat(target: float, state: State) -> float:
     if high is not None:
         target = min(target, high)
     return target
+
+
+def _as_datetime(value: object) -> datetime | None:
+    """Zeitpunkt aus einem Attribut (datetime oder ISO-Text), None wenn nicht lesbar."""
+    if isinstance(value, datetime):
+        return dt_util.as_utc(value)
+    if isinstance(value, str):
+        parsed = dt_util.parse_datetime(value)
+        return None if parsed is None else dt_util.as_utc(parsed)
+    return None
 
 
 def _float_attr(value: object) -> float | None:

@@ -1,5 +1,6 @@
 """Integrationstests: Controller sendet nur bei Änderung, Einrichtungsdialog."""
 
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
@@ -473,3 +474,59 @@ async def test_temperature_unchanged_when_thermostat_has_no_range(
     await hass.async_block_till_done(wait_background_tasks=True)
     assert temps
     assert temps[-1].data["temperature"] == 20
+
+
+async def _preheat_world(hass: HomeAssistant, minutes_until: int, current: float):
+    """Zeitplan aus, nächster Start in `minutes_until` Minuten, Raum bei `current` °C."""
+    from homeassistant.util import dt as dt_util
+
+    entry, _, temps = await setup(
+        hass, zone_extra={const.CONF_PREHEAT: True}, target=15
+    )
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    temps.clear()
+    hass.states.async_set(
+        TRV, "heat", {"temperature": 15, "current_temperature": current}
+    )
+    hass.states.async_set(
+        SCHED,
+        "off",
+        {"next_event": dt_util.utcnow() + timedelta(minutes=minutes_until)},
+    )
+    await hass.async_block_till_done()
+    return entry, temps
+
+
+async def test_preheat_starts_when_lead_time_reached(hass: HomeAssistant) -> None:
+    """Komfort 20, Raum 18 → 2 K × 20 min = 40 min Vorlauf; Start in 30 min → heizen."""
+    _, temps = await _preheat_world(hass, minutes_until=30, current=18)
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.state == "preheat"
+    assert sensor.attributes["preheat"] is True
+    assert temps[-1].data["temperature"] == 20
+
+
+async def test_preheat_waits_when_too_early(hass: HomeAssistant) -> None:
+    """Start erst in 120 min, Vorlauf 40 min → noch ECO."""
+    _, temps = await _preheat_world(hass, minutes_until=120, current=18)
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.state == "schedule_off_eco"
+    assert temps[-1].data["temperature"] == 18
+
+
+async def test_preheat_off_for_zone_without_option(hass: HomeAssistant) -> None:
+    from homeassistant.util import dt as dt_util
+
+    entry, _, _ = await setup(hass, target=15)
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    hass.states.async_set(TRV, "heat", {"temperature": 15, "current_temperature": 18})
+    hass.states.async_set(
+        SCHED, "off", {"next_event": dt_util.utcnow() + timedelta(minutes=10)}
+    )
+    await hass.async_block_till_done()
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.state == "schedule_off_eco"

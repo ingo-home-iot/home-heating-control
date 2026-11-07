@@ -305,3 +305,30 @@ def test_window_open_beats_bed() -> None:
 def test_away_beats_bed_reason() -> None:
     result = decide(zone(persons_home=0, schedule_on=True, bed_occupied=True))
     assert result.reason is Reason.AWAY_ECO
+
+
+def test_preheat_gives_comfort_before_schedule() -> None:
+    result = decide(zone(schedule_on=False, preheat=True))
+    assert result.reason is Reason.PREHEAT
+    assert result.temperature == comfort_temperature(
+        zone(schedule_on=False, preheat=True)
+    )
+
+
+def test_preheat_needs_someone_home() -> None:
+    result = decide(zone(schedule_on=False, preheat=True, persons_home=0))
+    assert result.reason is Reason.AWAY_ECO
+
+
+def test_preheat_blocked_by_eco() -> None:
+    assert decide(zone(preheat=True, eco=True)).reason is Reason.ECO_FORCED
+
+
+def test_schedule_on_keeps_schedule_reason_with_preheat() -> None:
+    assert (
+        decide(zone(schedule_on=True, preheat=True)).reason is Reason.SCHEDULE_COMFORT
+    )
+
+
+def test_preheat_window_open_still_off() -> None:
+    assert decide(zone(preheat=True, window_open=True)).mode is HvacTarget.OFF

@@ -13,7 +13,9 @@
           "away_eco_heating": "Keep heating at ECO temperature when away",
           "window_reaction_time": "Window reaction time",
           "bed_entity": "Bed sensor",
-          "bed_delay": "Bed: delay"
+          "bed_delay": "Bed: delay",
+          "preheat_minutes_per_kelvin": "Preheat: minutes per degree",
+          "preheat_max_minutes": "Preheat: maximum time"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -24,7 +26,9 @@
           "away_eco_heating": "Off: nobody home means heating off (except frost protection).",
           "window_reaction_time": "Seconds a window must stay open before heating turns off. 0 = immediately.",
           "bed_entity": "Optional. On = everyone in bed (e.g. bed scale). Only affects zones with “Follows bed”.",
-          "bed_delay": "Minutes the bed state has to stay the same before it counts (getting up briefly is ignored)."
+          "bed_delay": "Minutes the bed state has to stay the same before it counts (getting up briefly is ignored).",
+          "preheat_minutes_per_kelvin": "Roughly how long the room needs to get 1 °C warmer. This decides how early before the schedule starts heating begins.",
+          "preheat_max_minutes": "The earliest heating may start before the schedule begins."
         }
       },
       "reconfigure": {
@@ -38,7 +42,9 @@
           "away_eco_heating": "Keep heating at ECO temperature when away",
           "window_reaction_time": "Window reaction time",
           "bed_entity": "Bed sensor",
-          "bed_delay": "Bed: delay"
+          "bed_delay": "Bed: delay",
+          "preheat_minutes_per_kelvin": "Preheat: minutes per degree",
+          "preheat_max_minutes": "Preheat: maximum time"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -49,7 +55,9 @@
           "away_eco_heating": "Off: nobody home means heating off (except frost protection).",
           "window_reaction_time": "Seconds a window must stay open before heating turns off. 0 = immediately.",
           "bed_entity": "Optional. On = everyone in bed (e.g. bed scale). Only affects zones with “Follows bed”.",
-          "bed_delay": "Minutes the bed state has to stay the same before it counts (getting up briefly is ignored)."
+          "bed_delay": "Minutes the bed state has to stay the same before it counts (getting up briefly is ignored).",
+          "preheat_minutes_per_kelvin": "Roughly how long the room needs to get 1 °C warmer. This decides how early before the schedule starts heating begins.",
+          "preheat_max_minutes": "The earliest heating may start before the schedule begins."
         }
       },
       "areas": {
@@ -79,14 +87,16 @@
             "comfort_offset": "Comfort offset",
             "eco_offset": "ECO offset",
             "eco_relative": "ECO offset in addition to comfort offset",
-            "follow_bed": "Follows bed"
+            "follow_bed": "Follows bed",
+            "preheat": "Preheat"
           },
           "data_description": {
             "window_entity": "Optional. Window open = thermostats off.",
             "comfort_offset": "Added to the base target temperature, e.g. −1 for the bathroom.",
             "eco_offset": "Applies when away, outside the schedule or with ECO.",
             "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added.",
-            "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence."
+            "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence.",
+            "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home)."
           }
         },
         "reconfigure": {
@@ -98,14 +108,16 @@
             "comfort_offset": "Comfort offset",
             "eco_offset": "ECO offset",
             "eco_relative": "ECO offset in addition to comfort offset",
-            "follow_bed": "Follows bed"
+            "follow_bed": "Follows bed",
+            "preheat": "Preheat"
           },
           "data_description": {
             "window_entity": "Optional. Window open = thermostats off.",
             "comfort_offset": "Added to the base target temperature, e.g. −1 for the bathroom.",
             "eco_offset": "Applies when away, outside the schedule or with ECO.",
             "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added.",
-            "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence."
+            "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence.",
+            "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home)."
           }
         }
       },
@@ -137,7 +149,8 @@
           "zone_disabled": "Zone switched off",
           "zone_frost_protection": "Switched off (frost protection)",
           "party": "Party",
-          "bed_eco": "Bed occupied (ECO)"
+          "bed_eco": "Bed occupied (ECO)",
+          "preheat": "Preheating"
         }
       }
     },
