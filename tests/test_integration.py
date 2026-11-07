@@ -644,6 +644,8 @@ async def test_manual_change_pauses_control(hass: HomeAssistant) -> None:
     assert not temps
     sensor = hass.states.get("sensor.bad_decision")
     assert sensor is not None
+    assert sensor.state == "manual_override"
+    assert sensor.attributes["decision_reason"] == "schedule_comfort"
     assert sensor.attributes["manual_override_until"] is not None
 
 

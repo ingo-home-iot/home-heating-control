@@ -166,7 +166,8 @@
           "zone_frost_protection": "Ausgeschaltet (Frostschutz)",
           "party": "Party",
           "bed_eco": "Bett belegt (ECO)",
-          "preheat": "Vorheizen"
+          "preheat": "Vorheizen",
+          "manual_override": "Handverstellung (Pause)"
         }
       },
       "heating_time": {
