@@ -433,3 +433,43 @@ async def test_without_bed_entity_nothing_changes(hass: HomeAssistant) -> None:
     entry.runtime_data.set_flag(const.FLAG_WINTER, True)
     await hass.async_block_till_done()
     assert hass.states.get("sensor.bad_decision").state == "schedule_comfort"
+
+
+async def test_temperature_is_clamped_to_thermostat_range(hass: HomeAssistant) -> None:
+    """Frostschutz 3 °C: Thermostat mit min_temp 5 bekommt 5 (sonst lehnt HA den Wert ab)."""
+    hass.states.async_set(OUT, "2")
+    entry, _, temps = await setup(hass, hvac="heat", target=18)
+    hass.states.async_set(
+        TRV, "heat", {"temperature": 18, "min_temp": 5, "max_temp": 25}
+    )
+    hass.states.async_set(OUT, "2")
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await _set_number(
+        hass,
+        "number.home_heating_control_minimum_temperature_of_switched_off_zones_frost",
+        3,
+    )
+    temps.clear()
+    await hass.services.async_call(
+        "switch", "turn_off", {"entity_id": "switch.bad_heating"}, blocking=True
+    )
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert hass.states.get("sensor.bad_decision").attributes["target_temperature"] == 3
+    assert temps
+    assert temps[-1].data["temperature"] == 5
+
+
+async def test_temperature_unchanged_when_thermostat_has_no_range(
+    hass: HomeAssistant,
+) -> None:
+    """Ohne min_temp/max_temp am Thermostat bleibt die Zieltemperatur unverändert."""
+    _, _, temps = await setup(hass, hvac="heat", target=15)
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": "switch.home_heating_control_heating_enabled"},
+        blocking=True,
+    )
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert temps
+    assert temps[-1].data["temperature"] == 20
