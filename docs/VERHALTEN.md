@@ -111,7 +111,9 @@ unserem letzten Befehl und vom Wunschwert ab; Meldungen innerhalb von 60 s nach 
 Befehl zählen als Echo). Dann sendet sie dieser Zone **keine Temperatur** mehr, bis die Zeit
 abgelaufen ist **oder** sich der Grund der Entscheidung ändert (z. B. Zeitplanwechsel, Fenster,
 Abwesenheit), je nachdem was zuerst eintritt. Moduswechsel (z. B. Fenster auf = aus) werden
-weiter gesendet. Das Attribut `manual_override_until` des Entscheidungssensors zeigt das Ende.
+weiter gesendet. Während der Pause zeigt der Entscheidungssensor den Zustand `manual_override`; das Attribut
+`manual_override_until` nennt das Ende, `decision_reason` den Grund, der
+ohne Pause gelten würde.
 Standard 0 = aus (die Steuerung setzt den Wert wie bisher zurück).
 
 ## Probleme und Meldungen (ab 0.2.0)

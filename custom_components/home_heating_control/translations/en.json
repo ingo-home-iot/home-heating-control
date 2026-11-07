@@ -166,7 +166,8 @@
           "zone_frost_protection": "Switched off (frost protection)",
           "party": "Party",
           "bed_eco": "Bed occupied (ECO)",
-          "preheat": "Preheating"
+          "preheat": "Preheating",
+          "manual_override": "Manual change (paused)"
         }
       },
       "heating_time": {

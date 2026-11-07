@@ -38,12 +38,16 @@ async def async_setup_entry(
         )
 
 
+# Während einer Handverstellung zeigt der Sensor das statt des Entscheidungsgrunds
+MANUAL_STATE = "manual_override"
+
+
 class ZoneDecisionSensor(HeatingEntity, SensorEntity):
     """Zeigt den Grund der aktuellen Entscheidung; Details stehen in den Attributen."""
 
     _attr_translation_key = "decision"
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = [reason.value for reason in Reason]  # noqa: RUF012
+    _attr_options = [*(reason.value for reason in Reason), MANUAL_STATE]  # noqa: RUF012
 
     def __init__(self, controller: HeatingController, subentry_id: str) -> None:
         super().__init__(controller)
@@ -54,7 +58,10 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Grund der aktuellen Entscheidung."""
-        decision = self.controller.zones[self._subentry_id].decision
+        zone = self.controller.zones[self._subentry_id]
+        if zone.manual_until is not None:
+            return MANUAL_STATE
+        decision = zone.decision
         return None if decision is None else decision.reason.value
 
     @property
@@ -69,6 +76,7 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
             "eco_temperature": zone.eco_temp,
             "window_open": zone.window_open,
             "bed_occupied": self.controller.bed_occupied and zone.follow_bed,
+            "decision_reason": None if decision is None else decision.reason.value,
             "preheat": zone.preheat_event is not None,
             "vacation": self.controller.vacation_phase(),
             "manual_override_until": None
