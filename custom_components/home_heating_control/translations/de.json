@@ -17,7 +17,8 @@
           "preheat_minutes_per_kelvin": "Vorheizen: Minuten je Grad",
           "preheat_max_minutes": "Vorheizen: Höchstzeit",
           "notify_service": "Meldungen senden an",
-          "window_open_alert": "Meldung: Fenster offen nach"
+          "window_open_alert": "Meldung: Fenster offen nach",
+          "manual_override_minutes": "Handverstellung respektieren für"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -32,7 +33,8 @@
           "preheat_minutes_per_kelvin": "So lange braucht der Raum etwa, um 1 °C wärmer zu werden. Daraus ergibt sich, wie früh vor dem Zeitplanstart geheizt wird.",
           "preheat_max_minutes": "So früh vor dem Zeitplanstart wird höchstens mit dem Vorheizen begonnen.",
           "notify_service": "Optional. Name des notify-Dienstes, z. B. notify.mobile_app_mein_handy. Gemeldet werden: Thermostat über 30 Minuten nicht erreichbar, Thermostat lehnt einen Befehl ab, Fenster zu lange offen.",
-          "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie."
+          "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie.",
+          "manual_override_minutes": "Optional. Wird die Solltemperatur direkt am Thermostat verstellt, lässt die Steuerung den Wert so lange stehen (Minuten) oder bis die Zone ihren Zustand wechselt (z. B. Zeitplanwechsel). 0 = aus, die Steuerung setzt den Wert wie bisher zurück."
         }
       },
       "reconfigure": {
@@ -50,7 +52,8 @@
           "preheat_minutes_per_kelvin": "Vorheizen: Minuten je Grad",
           "preheat_max_minutes": "Vorheizen: Höchstzeit",
           "notify_service": "Meldungen senden an",
-          "window_open_alert": "Meldung: Fenster offen nach"
+          "window_open_alert": "Meldung: Fenster offen nach",
+          "manual_override_minutes": "Handverstellung respektieren für"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -65,7 +68,8 @@
           "preheat_minutes_per_kelvin": "So lange braucht der Raum etwa, um 1 °C wärmer zu werden. Daraus ergibt sich, wie früh vor dem Zeitplanstart geheizt wird.",
           "preheat_max_minutes": "So früh vor dem Zeitplanstart wird höchstens mit dem Vorheizen begonnen.",
           "notify_service": "Optional. Name des notify-Dienstes, z. B. notify.mobile_app_mein_handy. Gemeldet werden: Thermostat über 30 Minuten nicht erreichbar, Thermostat lehnt einen Befehl ab, Fenster zu lange offen.",
-          "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie."
+          "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie.",
+          "manual_override_minutes": "Optional. Wird die Solltemperatur direkt am Thermostat verstellt, lässt die Steuerung den Wert so lange stehen (Minuten) oder bis die Zone ihren Zustand wechselt (z. B. Zeitplanwechsel). 0 = aus, die Steuerung setzt den Wert wie bisher zurück."
         }
       },
       "areas": {

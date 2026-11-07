@@ -31,6 +31,7 @@ from .const import (
     CONF_ECO_RELATIVE,
     CONF_FOLLOW_BED,
     CONF_FROST_THRESHOLD,
+    CONF_MANUAL,
     CONF_NOTIFY,
     CONF_OUTDOOR_TEMP,
     CONF_PERSONS,
@@ -45,6 +46,7 @@ from .const import (
     DEFAULT_BED_DELAY,
     DEFAULT_ECO_OFFSET,
     DEFAULT_FROST_THRESHOLD,
+    DEFAULT_MANUAL,
     DEFAULT_PREHEAT_MAX,
     DEFAULT_PREHEAT_MIN_PER_K,
     DEFAULT_REACTION_TIME,
@@ -158,6 +160,17 @@ def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
                 selector.NumberSelectorConfig(
                     min=0,
                     max=360,
+                    step=5,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="min",
+                )
+            ),
+            vol.Required(
+                CONF_MANUAL, default=defaults.get(CONF_MANUAL, DEFAULT_MANUAL)
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=720,
                     step=5,
                     mode=selector.NumberSelectorMode.BOX,
                     unit_of_measurement="min",

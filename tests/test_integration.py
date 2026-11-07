@@ -621,3 +621,78 @@ async def test_window_alert_off_by_default(hass: HomeAssistant, freezer) -> None
     problem = hass.states.get("binary_sensor.bad_problem")
     assert problem is not None
     assert problem.state == "off"
+
+
+async def _manual_world(hass: HomeAssistant, minutes: float = 30):
+    """Winter an, Zeitplan an, Thermostat steht schon auf Komfort 20."""
+    entry, _, temps = await setup(
+        hass, global_extra={const.CONF_MANUAL: minutes}, target=20
+    )
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    temps.clear()
+    return entry, temps
+
+
+async def test_manual_change_pauses_control(hass: HomeAssistant) -> None:
+    """Jemand dreht am Thermostat auf 24: die Steuerung setzt nicht zurück."""
+    entry, temps = await _manual_world(hass)
+    hass.states.async_set(TRV, "heat", {"temperature": 24})
+    await hass.async_block_till_done()
+    entry.runtime_data.request_update()
+    await hass.async_block_till_done()
+    assert not temps
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.attributes["manual_override_until"] is not None
+
+
+async def test_manual_pause_ends_on_state_change(hass: HomeAssistant) -> None:
+    """Zeitplan endet: neuer Zustand beendet die Pause, ECO (18) wird gesetzt."""
+    _, temps = await _manual_world(hass)
+    hass.states.async_set(TRV, "heat", {"temperature": 24})
+    await hass.async_block_till_done()
+    hass.states.async_set(SCHED, "off")
+    await hass.async_block_till_done()
+    assert temps[-1].data["temperature"] == 18
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.attributes["manual_override_until"] is None
+
+
+async def test_manual_pause_ends_after_timeout(hass: HomeAssistant, freezer) -> None:
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    _, temps = await _manual_world(hass, minutes=30)
+    hass.states.async_set(TRV, "heat", {"temperature": 24})
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=31))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    assert temps[-1].data["temperature"] == 20
+
+
+async def test_own_command_is_not_a_manual_change(hass: HomeAssistant) -> None:
+    """Das Thermostat meldet unseren eigenen Wert zurück: keine Pause."""
+    entry, _, temps = await setup(hass, global_extra={const.CONF_MANUAL: 30}, target=15)
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    assert temps[-1].data["temperature"] == 20
+    hass.states.async_set(TRV, "heat", {"temperature": 20})
+    await hass.async_block_till_done()
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.attributes["manual_override_until"] is None
+
+
+async def test_manual_detection_off_by_default(hass: HomeAssistant) -> None:
+    entry, _, temps = await setup(hass, target=20)
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    temps.clear()
+    hass.states.async_set(TRV, "heat", {"temperature": 24})
+    await hass.async_block_till_done()
+    entry.runtime_data.request_update()
+    await hass.async_block_till_done()
+    assert temps[-1].data["temperature"] == 20

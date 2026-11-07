@@ -30,6 +30,7 @@ from . import const
 from .engine import (
     Decision,
     HvacTarget,
+    Reason,
     ZoneInputs,
     comfort_temperature,
     decide,
@@ -64,6 +65,11 @@ class Zone:
     eco_temp: int | None = None
     preheat_event: datetime | None = None
     command_failed: bool = False
+    manual_until: datetime | None = None
+    manual_reason: Reason | None = None
+    manual_timer: CALLBACK_TYPE | None = field(default=None, repr=False)
+    last_sent: dict[str, float] = field(default_factory=dict)
+    sent_at: datetime | None = None
     problems: frozenset[str] = frozenset()
     window_timer: CALLBACK_TYPE | None = field(default=None, repr=False)
 
@@ -114,6 +120,9 @@ class HeatingController:
         self._notify_service: str | None = data.get(const.CONF_NOTIFY) or None
         self._window_alert: float = float(
             data.get(const.CONF_WINDOW_ALERT, const.DEFAULT_WINDOW_ALERT)
+        )
+        self._manual_minutes: float = float(
+            data.get(const.CONF_MANUAL, const.DEFAULT_MANUAL)
         )
         self.bed_occupied = False
         self._bed_timer: CALLBACK_TYPE | None = None
@@ -171,6 +180,15 @@ class HeatingController:
                 self.hass, [self._outdoor_entity], self._handle_outdoor_change
             )
         )
+        if self._manual_minutes > 0:
+            thermostats = sorted(
+                {t for zone in self.zones.values() for t in zone.thermostats}
+            )
+            self._unsubs.append(
+                async_track_state_change_event(
+                    self.hass, thermostats, self._handle_thermostat_change
+                )
+            )
         if any(zone.preheat for zone in self.zones.values()):
             self._unsubs.append(
                 async_track_time_interval(
@@ -200,6 +218,7 @@ class HeatingController:
             if zone.window_timer:
                 zone.window_timer()
                 zone.window_timer = None
+            self._clear_manual(zone)
 
     async def _handle_started(self, _hass: HomeAssistant) -> None:
         self._started = True
@@ -235,6 +254,75 @@ class HeatingController:
     def _handle_preheat_tick(self, _now: datetime) -> None:
         """Regelmäßig prüfen, ob das Vorheizen beginnen muss (der Zeitplan meldet das nicht)."""
         self.request_update()
+
+    @callback
+    def _handle_thermostat_change(self, event: Event[EventStateChangedData]) -> None:
+        """Erkennt, ob jemand die Solltemperatur am Thermostat selbst verstellt hat."""
+        old, new = event.data["old_state"], event.data["new_state"]
+        if old is None or new is None or not self._started:
+            return
+        if STATE_UNAVAILABLE in (old.state, new.state):
+            return
+        before = _float_attr(old.attributes.get("temperature"))
+        after = _float_attr(new.attributes.get("temperature"))
+        if after is None or before is None or after == before:
+            return
+        entity_id = new.entity_id
+        for zone in self.zones.values():
+            if entity_id in zone.thermostats:
+                self._check_manual(zone, entity_id, new, after)
+
+    @callback
+    def _check_manual(
+        self, zone: Zone, entity_id: str, state: State, value: float
+    ) -> None:
+        decision = zone.decision
+        if decision is None or decision.mode is not HvacTarget.HEAT:
+            return
+        if zone.last_sent.get(entity_id) == value:
+            return  # das sind wir selbst
+        now = dt_util.utcnow()
+        if zone.sent_at is not None and now - zone.sent_at < timedelta(
+            seconds=const.MANUAL_ECHO_SECONDS
+        ):
+            return  # Echo eines eben gesendeten Befehls
+        if decision.temperature is not None and value == _clamp_to_thermostat(
+            float(decision.temperature), state
+        ):
+            return  # entspricht ohnehin dem Wunsch
+        self._clear_manual(zone)
+        zone.manual_until = now + timedelta(minutes=self._manual_minutes)
+        zone.manual_reason = decision.reason
+
+        @callback
+        def _expired(_now: datetime) -> None:
+            self._manual_expired(zone)
+
+        zone.manual_timer = async_track_point_in_utc_time(
+            self.hass, _expired, zone.manual_until
+        )
+        _LOGGER.info(
+            "Zone %s: Thermostat von Hand auf %s gestellt, Steuerung pausiert bis %s",
+            zone.name,
+            value,
+            dt_util.as_local(zone.manual_until).strftime("%H:%M"),
+        )
+        async_dispatcher_send(self.hass, const.signal_update(self.entry.entry_id))
+
+    @callback
+    def _manual_expired(self, zone: Zone) -> None:
+        zone.manual_timer = None
+        self._clear_manual(zone)
+        self.request_update()
+        async_dispatcher_send(self.hass, const.signal_update(self.entry.entry_id))
+
+    @callback
+    def _clear_manual(self, zone: Zone) -> None:
+        if zone.manual_timer is not None:
+            zone.manual_timer()
+            zone.manual_timer = None
+        zone.manual_until = None
+        zone.manual_reason = None
 
     @callback
     def _handle_watchdog(self, _now: datetime) -> None:
@@ -613,6 +701,11 @@ class HeatingController:
         for zone in self.zones.values():
             inputs = self._inputs(zone, persons_home)
             zone.decision = decide(inputs)
+            if (
+                zone.manual_until is not None
+                and zone.decision.reason is not zone.manual_reason
+            ):
+                self._clear_manual(zone)  # nächster Wechsel beendet die Pause
             zone.comfort_temp = comfort_temperature(inputs)
             zone.eco_temp = eco_temperature(inputs)
         async_dispatcher_send(self.hass, const.signal_update(self.entry.entry_id))
@@ -662,6 +755,8 @@ class HeatingController:
 
         if decision.mode is not HvacTarget.HEAT or decision.temperature is None:
             return
+        if zone.manual_until is not None:
+            return  # von Hand verstellt: Temperatur nicht überschreiben
         if mode_changes and const.SETTLE_DELAY > 0:
             await asyncio.sleep(const.SETTLE_DELAY)
 
@@ -689,6 +784,9 @@ class HeatingController:
                 {"entity_id": entity_ids, "temperature": target},
                 blocking=True,
             )
+            zone.sent_at = dt_util.utcnow()
+            for entity_id in entity_ids:
+                zone.last_sent[entity_id] = target
 
 
 _PROBLEM_TEXTS: dict[str, dict[str, str]] = {

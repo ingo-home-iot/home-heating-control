@@ -84,6 +84,17 @@ Reihenfolge, die erste zutreffende Regel gilt:
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
+## Handverstellung am Thermostat (optional, ab 0.2.0)
+
+Ist in den allgemeinen Einstellungen „Handverstellung respektieren für" > 0 Minuten, erkennt
+die Steuerung, wenn die Solltemperatur direkt am Thermostat geändert wurde (Wert weicht von
+unserem letzten Befehl und vom Wunschwert ab; Meldungen innerhalb von 60 s nach einem eigenen
+Befehl zählen als Echo). Dann sendet sie dieser Zone **keine Temperatur** mehr, bis die Zeit
+abgelaufen ist **oder** sich der Grund der Entscheidung ändert (z. B. Zeitplanwechsel, Fenster,
+Abwesenheit), je nachdem was zuerst eintritt. Moduswechsel (z. B. Fenster auf = aus) werden
+weiter gesendet. Das Attribut `manual_override_until` des Entscheidungssensors zeigt das Ende.
+Standard 0 = aus (die Steuerung setzt den Wert wie bisher zurück).
+
 ## Probleme und Meldungen (ab 0.2.0)
 
 Je Zone gibt es einen Diagnose-Sensor **Problem** (`binary_sensor`, an = Problem, Attribut
