@@ -33,6 +33,9 @@ from .const import (
     CONF_FROST_THRESHOLD,
     CONF_OUTDOOR_TEMP,
     CONF_PERSONS,
+    CONF_PREHEAT,
+    CONF_PREHEAT_MAX,
+    CONF_PREHEAT_MIN_PER_K,
     CONF_REACTION_TIME,
     CONF_SCHEDULE,
     CONF_THERMOSTATS,
@@ -40,6 +43,8 @@ from .const import (
     DEFAULT_BED_DELAY,
     DEFAULT_ECO_OFFSET,
     DEFAULT_FROST_THRESHOLD,
+    DEFAULT_PREHEAT_MAX,
+    DEFAULT_PREHEAT_MIN_PER_K,
     DEFAULT_REACTION_TIME,
     DOMAIN,
     SUBENTRY_ZONE,
@@ -127,6 +132,30 @@ def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
                     min=0,
                     max=120,
                     step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="min",
+                )
+            ),
+            vol.Required(
+                CONF_PREHEAT_MIN_PER_K,
+                default=defaults.get(CONF_PREHEAT_MIN_PER_K, DEFAULT_PREHEAT_MIN_PER_K),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1,
+                    max=120,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="min/K",
+                )
+            ),
+            vol.Required(
+                CONF_PREHEAT_MAX,
+                default=defaults.get(CONF_PREHEAT_MAX, DEFAULT_PREHEAT_MAX),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=360,
+                    step=5,
                     mode=selector.NumberSelectorMode.BOX,
                     unit_of_measurement="min",
                 )
@@ -297,6 +326,9 @@ def _zone_schema(defaults: dict[str, Any]) -> vol.Schema:
             ): selector.BooleanSelector(),
             vol.Required(
                 CONF_FOLLOW_BED, default=defaults.get(CONF_FOLLOW_BED, False)
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_PREHEAT, default=defaults.get(CONF_PREHEAT, False)
             ): selector.BooleanSelector(),
         }
     )

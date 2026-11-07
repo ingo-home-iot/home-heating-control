@@ -57,4 +57,5 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
             "eco_temperature": zone.eco_temp,
             "window_open": zone.window_open,
             "bed_occupied": self.controller.bed_occupied and zone.follow_bed,
+            "preheat": zone.preheat_event is not None,
         }

@@ -76,6 +76,13 @@ Reihenfolge, die erste zutreffende Regel gilt:
   wirkt erst, wenn er die eingestellte Wartezeit (Standard 10 min, in beide Richtungen)
   unverändert war; nach einem HA-Start gilt der aktuelle Zustand sofort. Fenster offen,
   Heizung aus und Abwesenheit bleiben unverändert.
+- **Vorheizen** (optional, ab 0.2.0): Ist für die Zone „Vorheizen" gewählt, der Zeitplan
+  gerade aus und jemand zu Hause, heizt die Zone schon vor dem nächsten Zeitplanstart auf
+  Komfort (Grund `preheat`). Die Vorlaufzeit ist (Komfort − aktuelle Raumtemperatur) ×
+  „Minuten je Grad", höchstens die eingestellte Höchstzeit. Die Raumtemperatur ist der
+  Mittelwert von `current_temperature` der Thermostate der Zone. Einmal gestartet, bleibt
+  das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
+  Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
 ## Bewusste Abweichungen von Bestandsverhalten
 
