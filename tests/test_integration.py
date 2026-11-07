@@ -696,3 +696,111 @@ async def test_manual_detection_off_by_default(hass: HomeAssistant) -> None:
     entry.runtime_data.request_update()
     await hass.async_block_till_done()
     assert temps[-1].data["temperature"] == 20
+
+
+async def _vacation_world(hass: HomeAssistant, lead: int = 6):
+    entry, _, temps = await setup(
+        hass, global_extra={const.CONF_VACATION_LEAD: lead}, target=20
+    )
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    return entry, temps
+
+
+def _decision(hass: HomeAssistant):
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    return sensor
+
+
+async def test_vacation_without_date_means_away(hass: HomeAssistant) -> None:
+    """Zeitplan an, Person da, aber Urlaub: wie abwesend (ECO)."""
+    entry, _ = await _vacation_world(hass)
+    assert _decision(hass).state == "schedule_comfort"
+    entry.runtime_data.set_vacation(True)
+    await hass.async_block_till_done()
+    assert _decision(hass).state == "away_eco"
+    assert _decision(hass).attributes["vacation"] == "away"
+
+
+async def test_vacation_far_return_still_away(hass: HomeAssistant) -> None:
+    from homeassistant.util import dt as dt_util
+
+    entry, _ = await _vacation_world(hass, lead=6)
+    entry.runtime_data.set_vacation_return(dt_util.utcnow() + timedelta(hours=20))
+    entry.runtime_data.set_vacation(True)
+    await hass.async_block_till_done()
+    assert _decision(hass).state == "away_eco"
+
+
+async def test_vacation_return_soon_heats_comfort_again(hass: HomeAssistant) -> None:
+    """Rückkehr in 3 h, Vorlauf 6 h: Zeitplan gilt wieder, auch wenn noch niemand da ist."""
+    from homeassistant.util import dt as dt_util
+
+    entry, _ = await _vacation_world(hass, lead=6)
+    hass.states.async_set(PERSON, "not_home")
+    entry.runtime_data.set_vacation_return(dt_util.utcnow() + timedelta(hours=3))
+    entry.runtime_data.set_vacation(True)
+    await hass.async_block_till_done()
+    assert _decision(hass).state == "schedule_comfort"
+    assert _decision(hass).attributes["vacation"] == "returning"
+
+
+async def test_vacation_switches_to_returning_at_lead_time(
+    hass: HomeAssistant, freezer
+) -> None:
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    entry, _ = await _vacation_world(hass, lead=6)
+    entry.runtime_data.set_vacation_return(dt_util.utcnow() + timedelta(hours=10))
+    entry.runtime_data.set_vacation(True)
+    await hass.async_block_till_done()
+    assert _decision(hass).state == "away_eco"
+    freezer.tick(timedelta(hours=5))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    assert _decision(hass).state == "schedule_comfort"
+
+
+async def test_vacation_ends_by_itself_after_return(
+    hass: HomeAssistant, freezer
+) -> None:
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    entry, _ = await _vacation_world(hass, lead=1)
+    entry.runtime_data.set_vacation_return(dt_util.utcnow() + timedelta(hours=2))
+    entry.runtime_data.set_vacation(True)
+    await hass.async_block_till_done()
+    for _ in range(3):
+        freezer.tick(timedelta(hours=2))
+        async_fire_time_changed(hass, dt_util.utcnow())
+        await hass.async_block_till_done()
+    switch = hass.states.get("switch.home_heating_control_vacation")
+    assert switch is not None
+    assert switch.state == "off"
+    assert _decision(hass).attributes["vacation"] == "off"
+
+
+async def test_vacation_entities_set_controller(hass: HomeAssistant) -> None:
+    entry, _ = await _vacation_world(hass)
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": "switch.home_heating_control_vacation"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "datetime",
+        "set_value",
+        {
+            "entity_id": "datetime.home_heating_control_return",
+            "datetime": "2099-01-01 12:00:00",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    assert entry.runtime_data.vacation is True
+    assert entry.runtime_data.vacation_return is not None
+    assert entry.runtime_data.vacation_return.year == 2099

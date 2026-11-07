@@ -124,6 +124,12 @@ class HeatingController:
         self._manual_minutes: float = float(
             data.get(const.CONF_MANUAL, const.DEFAULT_MANUAL)
         )
+        self._vacation_lead: float = float(
+            data.get(const.CONF_VACATION_LEAD, const.DEFAULT_VACATION_LEAD)
+        )
+        self.vacation = False
+        self.vacation_return: datetime | None = None
+        self._vacation_unsub: CALLBACK_TYPE | None = None
         self.bed_occupied = False
         self._bed_timer: CALLBACK_TYPE | None = None
 
@@ -214,6 +220,7 @@ class HeatingController:
         self._unsubs.clear()
         self._cancel_party_timer()
         self._cancel_bed_timer()
+        self._cancel_vacation_timer()
         for zone in self.zones.values():
             if zone.window_timer:
                 zone.window_timer()
@@ -222,6 +229,9 @@ class HeatingController:
 
     async def _handle_started(self, _hass: HomeAssistant) -> None:
         self._started = True
+        if self.vacation_phase() == "over":
+            self.vacation = False
+        self._schedule_vacation()
         self.bed_occupied = self._bed_live()
         for zone in self.zones.values():
             zone.window_open = self._window_live(zone)
@@ -543,6 +553,73 @@ class HeatingController:
         self.stop_party()
         async_dispatcher_send(self.hass, const.signal_update(self.entry.entry_id))
 
+    # --- Urlaub ---------------------------------------------------------------------------
+
+    def vacation_phase(self, now: datetime | None = None) -> str:
+        """off, away (verreist), returning (kommt bald heim) oder over (vorbei)."""
+        if not self.vacation:
+            return "off"
+        now = now or dt_util.utcnow()
+        back = self.vacation_return
+        if back is None:
+            return "away"
+        if now >= back + timedelta(hours=const.VACATION_GRACE_HOURS):
+            return "over"
+        if now >= back - timedelta(hours=self._vacation_lead):
+            return "returning"
+        return "away"
+
+    @callback
+    def set_vacation(self, value: bool, *, update: bool = True) -> None:
+        """Urlaub ein- oder ausschalten."""
+        self.vacation = value
+        self._schedule_vacation()
+        if update:
+            self.request_update()
+
+    @callback
+    def set_vacation_return(
+        self, value: datetime | None, *, update: bool = True
+    ) -> None:
+        """Rückkehr-Zeitpunkt setzen (None = unbestimmt)."""
+        self.vacation_return = None if value is None else dt_util.as_utc(value)
+        self._schedule_vacation()
+        if update:
+            self.request_update()
+
+    @callback
+    def _cancel_vacation_timer(self) -> None:
+        if self._vacation_unsub is not None:
+            self._vacation_unsub()
+            self._vacation_unsub = None
+
+    @callback
+    def _schedule_vacation(self) -> None:
+        """Zeitgeber auf den nächsten Phasenwechsel (Vorlauf vor der Rückkehr, Ende)."""
+        self._cancel_vacation_timer()
+        phase = self.vacation_phase()
+        back = self.vacation_return
+        if back is None or phase in ("off", "over"):
+            return
+        boundary = (
+            back - timedelta(hours=self._vacation_lead)
+            if phase == "away"
+            else back + timedelta(hours=const.VACATION_GRACE_HOURS)
+        )
+
+        @callback
+        def _tick(_now: datetime) -> None:
+            self._vacation_unsub = None
+            if self.vacation_phase() == "over":
+                self.vacation = False
+                _LOGGER.info("Urlaub beendet")
+            else:
+                self._schedule_vacation()
+            self.request_update()
+            async_dispatcher_send(self.hass, const.signal_update(self.entry.entry_id))
+
+        self._vacation_unsub = async_track_point_in_utc_time(self.hass, _tick, boundary)
+
     @callback
     def set_zone_eco_offset(
         self, subentry_id: str, value: float, *, update: bool = True
@@ -594,11 +671,16 @@ class HeatingController:
         )
 
     def _persons_home(self) -> int:
+        phase = self.vacation_phase()
+        if phase == "away":
+            return 0
         count = 0
         for person in self._persons:
             state = self.hass.states.get(person)
             if state is not None and state.state == "home":
                 count += 1
+        if phase == "returning":
+            return max(count, 1)  # jemand kommt bald: Raum soll warm sein
         return count
 
     def _inputs(self, zone: Zone, persons_home: int) -> ZoneInputs:

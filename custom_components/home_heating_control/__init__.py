@@ -9,7 +9,7 @@ from homeassistant.helpers import device_registry as dr
 from .const import DOMAIN
 from .controller import HeatingController
 
-PLATFORMS = ["binary_sensor", "sensor", "switch", "number"]
+PLATFORMS = ["binary_sensor", "datetime", "sensor", "switch", "number"]
 
 type HeatingConfigEntry = ConfigEntry[HeatingController]
 

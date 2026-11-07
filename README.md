@@ -52,6 +52,10 @@ In den allgemeinen Einstellungen kannst du einen **Bett-Sensor** (`binary_sensor
 
 Je Zone schaltest du **„Vorheizen"** ein (Standard: aus). Dann beginnt die Zone schon vor dem nächsten Zeitplanstart, auf Komfort zu heizen, damit der Raum rechtzeitig warm ist. In den allgemeinen Einstellungen legst du fest, wie viele **Minuten ein Grad** Erwärmung etwa dauert (Standard 20) und die **Höchstzeit** (Standard 90 Minuten). Beispiel: Raum 18 °C, Komfort 20 °C, 20 min/Grad → Start 40 Minuten vor dem Zeitplanstart. Der Grund steht dann als `preheat` im Entscheidungssensor. Ohne Schalter ändert sich nichts.
 
+### Urlaub mit Rückkehr-Datum (ab 0.2.0)
+
+Am Hauptgerät gibt es den Schalter **Urlaub** und das Feld **Rückkehr**. Im Urlaub wird nur noch auf ECO-Temperatur (oder Frostschutz) geheizt, auch wenn ein Handy zu Hause liegt. Ein paar Stunden vor der Rückkehr (Einstellung „Urlaub: Vorlauf vor Rückkehr", Standard 6 h) heizt die Steuerung wieder nach Zeitplan, damit es bei der Ankunft warm ist. Drei Stunden nach dem Rückkehr-Zeitpunkt endet der Urlaub von selbst. Ohne Rückkehr-Zeitpunkt dauert er, bis du ihn ausschaltest.
+
 ### Handverstellung am Thermostat (optional, ab 0.2.0)
 
 Stellst du ein Thermostat direkt am Ventil um, setzt die Steuerung es sonst beim nächsten Durchlauf zurück. Mit **„Handverstellung respektieren für"** (Minuten, Standard 0 = aus) lässt sie deinen Wert stehen, bis die Zeit um ist oder sich die Lage ändert (z. B. der Zeitplan wechselt). Das Ende steht im Attribut `manual_override_until` des Entscheidungssensors.

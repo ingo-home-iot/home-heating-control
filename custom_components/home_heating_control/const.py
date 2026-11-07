@@ -16,6 +16,7 @@ CONF_BED = "bed_entity"
 CONF_BED_DELAY = "bed_delay"
 CONF_NOTIFY = "notify_service"
 CONF_MANUAL = "manual_override_minutes"
+CONF_VACATION_LEAD = "vacation_lead_hours"
 CONF_WINDOW_ALERT = "window_open_alert"
 CONF_PREHEAT_MIN_PER_K = "preheat_minutes_per_kelvin"
 CONF_PREHEAT_MAX = "preheat_max_minutes"
@@ -44,6 +45,8 @@ FLAGS = (FLAG_WINTER, FLAG_PARTY, FLAG_COMFORT_ALWAYS, FLAG_ECO)
 DEFAULT_FROST_THRESHOLD = 5
 DEFAULT_REACTION_TIME = 3
 DEFAULT_BED_DELAY = 10  # Minuten, bis ein Wechsel des Bett-Zustands wirkt
+DEFAULT_VACATION_LEAD = 6  # Stunden vor der Rückkehr wird wieder normal geheizt
+VACATION_GRACE_HOURS = 3  # so lange nach der Rückkehr gilt noch "jemand kommt heim"
 DEFAULT_MANUAL = 0  # Minuten; 0 = Änderungen am Thermostat werden nicht respektiert
 MANUAL_ECHO_SECONDS = (
     60  # so lange gelten Meldungen des Thermostats nach unserem Befehl als Echo

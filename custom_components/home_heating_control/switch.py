@@ -27,7 +27,7 @@ async def async_setup_entry(
     async_add_entities(
         FlagSwitch(controller, flag) for flag in FLAGS if flag != FLAG_PARTY
     )
-    async_add_entities([PartySwitch(controller)])
+    async_add_entities([PartySwitch(controller), VacationSwitch(controller)])
     for subentry_id in controller.zones:
         async_add_entities(
             [
@@ -125,6 +125,39 @@ class PartySwitch(HeatingEntity, SwitchEntity, RestoreEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Party beenden."""
         self.controller.stop_party()
+        self.async_write_ha_state()
+
+
+class VacationSwitch(HeatingEntity, SwitchEntity, RestoreEntity):
+    """Urlaub: niemand ist da, bis kurz vor dem eingestellten Rückkehr-Zeitpunkt."""
+
+    _attr_translation_key = "vacation"
+
+    def __init__(self, controller: HeatingController) -> None:
+        super().__init__(controller)
+        self._attr_unique_id = f"{controller.entry.entry_id}_vacation"
+        self._attr_device_info = global_device(controller)
+
+    @property
+    def is_on(self) -> bool:
+        """Zustand kommt vom Controller (er beendet den Urlaub auch von selbst)."""
+        return self.controller.vacation
+
+    async def async_added_to_hass(self) -> None:
+        """Letzten Zustand wiederherstellen (ohne sofortige Neuberechnung)."""
+        await super().async_added_to_hass()
+        last = await self.async_get_last_state()
+        if last is not None and last.state == STATE_ON:
+            self.controller.set_vacation(True, update=False)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Urlaub starten."""
+        self.controller.set_vacation(True)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Urlaub beenden."""
+        self.controller.set_vacation(False)
         self.async_write_ha_state()
 
 
