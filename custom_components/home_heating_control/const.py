@@ -30,6 +30,7 @@ CONF_ECO_OFFSET = "eco_offset"
 CONF_ECO_RELATIVE = "eco_relative"
 CONF_FOLLOW_BED = "follow_bed"
 CONF_PREHEAT = "preheat"
+CONF_ROOM_SENSOR = "room_temp_entity"
 CONF_AREA_ID = "area_id"
 CONF_AREAS = "areas"
 

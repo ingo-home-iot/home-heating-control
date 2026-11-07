@@ -54,6 +54,7 @@ class Zone:
     window_entity: str | None
     follow_bed: bool
     preheat: bool
+    room_sensor: str | None
     comfort_offset: float
     eco_offset: float
     eco_relative: bool
@@ -154,6 +155,7 @@ class HeatingController:
                 window_entity=sub.get(const.CONF_WINDOW),
                 follow_bed=bool(sub.get(const.CONF_FOLLOW_BED, False)),
                 preheat=bool(sub.get(const.CONF_PREHEAT, False)),
+                room_sensor=sub.get(const.CONF_ROOM_SENSOR) or None,
                 comfort_offset=float(sub.get(const.CONF_COMFORT_OFFSET, 0)),
                 eco_offset=float(sub.get(const.CONF_ECO_OFFSET, 0)),
                 eco_relative=bool(sub.get(const.CONF_ECO_RELATIVE, False)),
@@ -774,8 +776,8 @@ class HeatingController:
         zone.preheat_event = next_event
         return True
 
-    def _zone_temperature(self, zone: Zone) -> float | None:
-        """Mittlere Raumtemperatur der Thermostate (nur Thermostate mit Messwert)."""
+    def thermostat_temperature(self, zone: Zone) -> float | None:
+        """Mittlere Messung der Thermostate (nur Thermostate mit Messwert)."""
         values = []
         for entity_id in zone.thermostats:
             state = self.hass.states.get(entity_id)
@@ -785,6 +787,15 @@ class HeatingController:
             if value is not None:
                 values.append(value)
         return sum(values) / len(values) if values else None
+
+    def room_temperature(self, zone: Zone) -> float | None:
+        """Messung des Raumfühlers der Zone, None ohne Fühler oder ohne gültigen Wert."""
+        return _float_state(self.hass, zone.room_sensor)
+
+    def _zone_temperature(self, zone: Zone) -> float | None:
+        """Raumtemperatur: Raumfühler, sonst die Thermostate."""
+        room = self.room_temperature(zone)
+        return room if room is not None else self.thermostat_temperature(zone)
 
     @callback
     def request_update(self) -> None:

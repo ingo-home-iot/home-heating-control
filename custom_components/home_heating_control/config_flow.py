@@ -39,6 +39,7 @@ from .const import (
     CONF_PREHEAT_MAX,
     CONF_PREHEAT_MIN_PER_K,
     CONF_REACTION_TIME,
+    CONF_ROOM_SENSOR,
     CONF_SCHEDULE,
     CONF_THERMOSTATS,
     CONF_VACATION_LEAD,
@@ -361,6 +362,14 @@ def _zone_schema(defaults: dict[str, Any]) -> vol.Schema:
             ),
             window_key: selector.EntitySelector(
                 selector.EntitySelectorConfig(domain=["binary_sensor", "input_boolean"])
+            ),
+            vol.Optional(
+                CONF_ROOM_SENSOR,
+                description={"suggested_value": defaults.get(CONF_ROOM_SENSOR)},
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    domain="sensor", device_class="temperature"
+                )
             ),
             vol.Required(
                 CONF_COMFORT_OFFSET, default=defaults.get(CONF_COMFORT_OFFSET, 0)

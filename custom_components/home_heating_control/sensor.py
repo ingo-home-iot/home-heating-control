@@ -74,6 +74,8 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
             "target_temperature": None if decision is None else decision.temperature,
             "comfort_temperature": zone.comfort_temp,
             "eco_temperature": zone.eco_temp,
+            "room_temperature": self.controller.room_temperature(zone),
+            "thermostat_temperature": self.controller.thermostat_temperature(zone),
             "window_open": zone.window_open,
             "bed_occupied": self.controller.bed_occupied and zone.follow_bed,
             "decision_reason": None if decision is None else decision.reason.value,

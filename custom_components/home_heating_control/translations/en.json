@@ -104,7 +104,8 @@
             "eco_offset": "ECO offset",
             "eco_relative": "ECO offset in addition to comfort offset",
             "follow_bed": "Follows bed",
-            "preheat": "Preheat"
+            "preheat": "Preheat",
+            "room_temp_entity": "Room temperature sensor"
           },
           "data_description": {
             "window_entity": "Optional. Window open = thermostats off.",
@@ -112,7 +113,8 @@
             "eco_offset": "Applies when away, outside the schedule or with ECO.",
             "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added.",
             "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence.",
-            "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home)."
+            "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home).",
+            "room_temp_entity": "Optional. Extra sensor in the room. Used for preheating instead of the thermostat reading and shown as a comparison value in the decision sensor. It does not control the heating."
           }
         },
         "reconfigure": {
@@ -125,7 +127,8 @@
             "eco_offset": "ECO offset",
             "eco_relative": "ECO offset in addition to comfort offset",
             "follow_bed": "Follows bed",
-            "preheat": "Preheat"
+            "preheat": "Preheat",
+            "room_temp_entity": "Room temperature sensor"
           },
           "data_description": {
             "window_entity": "Optional. Window open = thermostats off.",
@@ -133,7 +136,8 @@
             "eco_offset": "Applies when away, outside the schedule or with ECO.",
             "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added.",
             "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence.",
-            "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home)."
+            "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home).",
+            "room_temp_entity": "Optional. Extra sensor in the room. Used for preheating instead of the thermostat reading and shown as a comparison value in the decision sensor. It does not control the heating."
           }
         }
       },

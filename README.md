@@ -52,6 +52,10 @@ In den allgemeinen Einstellungen kannst du einen **Bett-Sensor** (`binary_sensor
 
 Je Zone schaltest du **„Vorheizen"** ein (Standard: aus). Dann beginnt die Zone schon vor dem nächsten Zeitplanstart, auf Komfort zu heizen, damit der Raum rechtzeitig warm ist. In den allgemeinen Einstellungen legst du fest, wie viele **Minuten ein Grad** Erwärmung etwa dauert (Standard 20) und die **Höchstzeit** (Standard 90 Minuten). Beispiel: Raum 18 °C, Komfort 20 °C, 20 min/Grad → Start 40 Minuten vor dem Zeitplanstart. Der Grund steht dann als `preheat` im Entscheidungssensor. Ohne Schalter ändert sich nichts.
 
+### Raumtemperatur-Sensor (optional, ab 0.3.0)
+
+In den Zoneneinstellungen kannst du einen zusätzlichen **Raumtemperatur-Sensor** wählen. Er steuert die Heizung nicht, sondern wird beim Vorheizen genutzt und im Entscheidungssensor als `room_temperature` neben `thermostat_temperature` angezeigt, zum Vergleichen. Ohne Auswahl ändert sich nichts.
+
 ### Heizzeit je Zone (ab 0.2.0)
 
 Der Sensor **Heizzeit heute** zeigt je Zone, wie viele Stunden die Thermostate heute aktiv geheizt haben (Beginn jeden Tag um Mitternacht). So siehst du, was Absenkungen und Vorheizen tatsächlich bewirken. Das Statistik-Dashboard von Home Assistant kann den Wert über die Tage vergleichen.
