@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, State, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     EventStateChangedData,
@@ -494,28 +494,41 @@ class HeatingController:
         if mode_changes and const.SETTLE_DELAY > 0:
             await asyncio.sleep(const.SETTLE_DELAY)
 
-        target = decision.temperature
-        temp_changes = [
-            entity_id
-            for entity_id in zone.thermostats
-            if (state := self.hass.states.get(entity_id)) is not None
-            and state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
-            and _float_attr(state.attributes.get("temperature")) != float(target)
-        ]
-        if temp_changes:
+        # Je Thermostat auf dessen erlaubten Bereich begrenzen (z. B. tado: 5-25 °C),
+        # sonst lehnt climate.set_temperature den Wert ab und der alte Sollwert bleibt.
+        changes: dict[float, list[str]] = {}
+        for entity_id in zone.thermostats:
+            state = self.hass.states.get(entity_id)
+            if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+                continue
+            target = _clamp_to_thermostat(float(decision.temperature), state)
+            if _float_attr(state.attributes.get("temperature")) != target:
+                changes.setdefault(target, []).append(entity_id)
+        for target, entity_ids in changes.items():
             _LOGGER.info(
                 "Zone %s: setze Temperatur %s (%s) für %s",
                 zone.name,
                 target,
                 decision.reason.value,
-                temp_changes,
+                entity_ids,
             )
             await self.hass.services.async_call(
                 "climate",
                 "set_temperature",
-                {"entity_id": temp_changes, "temperature": target},
+                {"entity_id": entity_ids, "temperature": target},
                 blocking=True,
             )
+
+
+def _clamp_to_thermostat(target: float, state: State) -> float:
+    """Zieltemperatur auf min_temp/max_temp des Thermostats begrenzen."""
+    low = _float_attr(state.attributes.get("min_temp"))
+    high = _float_attr(state.attributes.get("max_temp"))
+    if low is not None:
+        target = max(target, low)
+    if high is not None:
+        target = min(target, high)
+    return target
 
 
 def _float_attr(value: object) -> float | None:
