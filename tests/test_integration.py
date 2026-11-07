@@ -804,3 +804,41 @@ async def test_vacation_entities_set_controller(hass: HomeAssistant) -> None:
     assert entry.runtime_data.vacation is True
     assert entry.runtime_data.vacation_return is not None
     assert entry.runtime_data.vacation_return.year == 2099
+
+
+async def _tick(hass: HomeAssistant, freezer, minutes: int) -> None:
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    for _ in range(minutes):
+        freezer.tick(timedelta(minutes=1))
+        async_fire_time_changed(hass, dt_util.utcnow())
+        await hass.async_block_till_done()
+
+
+async def test_heating_time_counts_only_while_heating(
+    hass: HomeAssistant, freezer
+) -> None:
+    await setup(hass)
+    hass.states.async_set(TRV, "heat", {"temperature": 20, "hvac_action": "heating"})
+    await _tick(hass, freezer, 30)
+    hass.states.async_set(TRV, "heat", {"temperature": 20, "hvac_action": "idle"})
+    await _tick(hass, freezer, 30)
+    sensor = hass.states.get("sensor.bad_heating_time_today")
+    assert sensor is not None
+    assert 0.45 <= float(sensor.state) <= 0.55
+
+
+async def test_heating_time_resets_next_day(hass: HomeAssistant, freezer) -> None:
+    await setup(hass)
+    hass.states.async_set(TRV, "heat", {"temperature": 20, "hvac_action": "heating"})
+    await _tick(hass, freezer, 10)
+    sensor = hass.states.get("sensor.bad_heating_time_today")
+    assert sensor is not None
+    assert float(sensor.state) > 0
+    hass.states.async_set(TRV, "heat", {"temperature": 20, "hvac_action": "idle"})
+    freezer.tick(timedelta(hours=26))
+    await _tick(hass, freezer, 1)
+    sensor = hass.states.get("sensor.bad_heating_time_today")
+    assert sensor is not None
+    assert float(sensor.state) == 0

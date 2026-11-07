@@ -84,6 +84,13 @@ Reihenfolge, die erste zutreffende Regel gilt:
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
+## Heizzeit je Zone (ab 0.2.0)
+
+Je Zone gibt es den Sensor **Heizzeit heute** (Stunden, `total` mit täglichem Neubeginn um
+Mitternacht). Gezählt wird die Zeit, in der mindestens ein Thermostat der Zone laut
+`hvac_action` aktiv `heating` meldet (Genauigkeit etwa eine Minute). Der Wert überlebt einen
+Neustart am selben Tag. Damit lässt sich beurteilen, was ECO-Absenkung oder Vorheizen bringen.
+
 ## Urlaub mit Rückkehr-Datum (ab 0.2.0)
 
 Der Schalter **Urlaub** und das Feld **Rückkehr** (Datum und Uhrzeit) stehen am Hauptgerät.

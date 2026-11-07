@@ -168,6 +168,9 @@
           "bed_eco": "Bett belegt (ECO)",
           "preheat": "Vorheizen"
         }
+      },
+      "heating_time": {
+        "name": "Heizzeit heute"
       }
     },
     "switch": {
