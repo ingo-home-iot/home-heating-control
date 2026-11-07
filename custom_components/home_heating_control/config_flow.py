@@ -31,6 +31,7 @@ from .const import (
     CONF_ECO_RELATIVE,
     CONF_FOLLOW_BED,
     CONF_FROST_THRESHOLD,
+    CONF_NOTIFY,
     CONF_OUTDOOR_TEMP,
     CONF_PERSONS,
     CONF_PREHEAT,
@@ -40,12 +41,14 @@ from .const import (
     CONF_SCHEDULE,
     CONF_THERMOSTATS,
     CONF_WINDOW,
+    CONF_WINDOW_ALERT,
     DEFAULT_BED_DELAY,
     DEFAULT_ECO_OFFSET,
     DEFAULT_FROST_THRESHOLD,
     DEFAULT_PREHEAT_MAX,
     DEFAULT_PREHEAT_MIN_PER_K,
     DEFAULT_REACTION_TIME,
+    DEFAULT_WINDOW_ALERT,
     DOMAIN,
     SUBENTRY_ZONE,
 )
@@ -160,6 +163,21 @@ def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
                     unit_of_measurement="min",
                 )
             ),
+            vol.Optional(
+                CONF_NOTIFY, description={"suggested_value": defaults.get(CONF_NOTIFY)}
+            ): selector.TextSelector(),
+            vol.Required(
+                CONF_WINDOW_ALERT,
+                default=defaults.get(CONF_WINDOW_ALERT, DEFAULT_WINDOW_ALERT),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=240,
+                    step=5,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="min",
+                )
+            ),
         }
     )
 
@@ -252,9 +270,11 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
                 for sub in entry.subentries.values()
                 for thermostat in sub.data.get(CONF_THERMOSTATS, [])
             }
-            # Optionale Felder (Bett) bleiben nicht stehen, wenn sie geleert wurden
+            # Optionale Felder bleiben nicht stehen, wenn sie geleert wurden
             self._global = {
-                key: value for key, value in entry.data.items() if key != CONF_BED
+                key: value
+                for key, value in entry.data.items()
+                if key not in (CONF_BED, CONF_NOTIFY)
             } | user_input
             # Räume überspringen, die schon eine Zone haben (auch von Hand angelegte)
             self._candidates = {

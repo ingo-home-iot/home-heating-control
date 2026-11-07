@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, State, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     EventStateChangedData,
@@ -62,6 +63,8 @@ class Zone:
     comfort_temp: int | None = None
     eco_temp: int | None = None
     preheat_event: datetime | None = None
+    command_failed: bool = False
+    problems: frozenset[str] = frozenset()
     window_timer: CALLBACK_TYPE | None = field(default=None, repr=False)
 
 
@@ -107,6 +110,10 @@ class HeatingController:
         )
         self._preheat_max: float = float(
             data.get(const.CONF_PREHEAT_MAX, const.DEFAULT_PREHEAT_MAX)
+        )
+        self._notify_service: str | None = data.get(const.CONF_NOTIFY) or None
+        self._window_alert: float = float(
+            data.get(const.CONF_WINDOW_ALERT, const.DEFAULT_WINDOW_ALERT)
         )
         self.bed_occupied = False
         self._bed_timer: CALLBACK_TYPE | None = None
@@ -172,6 +179,13 @@ class HeatingController:
                     timedelta(minutes=const.PREHEAT_CHECK_INTERVAL),
                 )
             )
+        self._unsubs.append(
+            async_track_time_interval(
+                self.hass,
+                self._handle_watchdog,
+                timedelta(minutes=const.WATCHDOG_INTERVAL),
+            )
+        )
         self._unsubs.append(async_at_started(self.hass, self._handle_started))
 
     @callback
@@ -221,6 +235,80 @@ class HeatingController:
     def _handle_preheat_tick(self, _now: datetime) -> None:
         """Regelmäßig prüfen, ob das Vorheizen beginnen muss (der Zeitplan meldet das nicht)."""
         self.request_update()
+
+    @callback
+    def _handle_watchdog(self, _now: datetime) -> None:
+        """Minütlich auf Probleme prüfen (nicht erreichbar, Fenster lange offen)."""
+        if self._started:
+            self._update_problems()
+
+    @callback
+    def _update_problems(self) -> None:
+        """Probleme je Zone neu bestimmen; neu aufgetretene werden gemeldet."""
+        now = dt_util.utcnow()
+        messages: list[str] = []
+        changed = False
+        for zone in self.zones.values():
+            found: set[str] = set()
+            if self._thermostat_unavailable(zone, now):
+                found.add(const.PROBLEM_UNAVAILABLE)
+            if zone.command_failed:
+                found.add(const.PROBLEM_COMMAND)
+            if self._window_open_too_long(zone, now):
+                found.add(const.PROBLEM_WINDOW)
+            new = frozenset(found)
+            if new == zone.problems:
+                continue
+            messages.extend(
+                _problem_message(self.hass, zone.name, problem)
+                for problem in sorted(new - zone.problems)
+            )
+            zone.problems = new
+            changed = True
+        if changed:
+            async_dispatcher_send(self.hass, const.signal_update(self.entry.entry_id))
+        if messages and self._notify_service:
+            self.entry.async_create_background_task(
+                self.hass, self._async_notify(messages), f"{const.DOMAIN} notify"
+            )
+
+    def _thermostat_unavailable(self, zone: Zone, now: datetime) -> bool:
+        limit = timedelta(minutes=const.UNAVAILABLE_ALERT_MINUTES)
+        for entity_id in zone.thermostats:
+            state = self.hass.states.get(entity_id)
+            if (
+                state is not None
+                and state.state == STATE_UNAVAILABLE
+                and now - state.last_changed >= limit
+            ):
+                return True
+        return False
+
+    def _window_open_too_long(self, zone: Zone, now: datetime) -> bool:
+        if self._window_alert <= 0 or zone.window_entity is None:
+            return False
+        state = self.hass.states.get(zone.window_entity)
+        return (
+            state is not None
+            and state.state == STATE_ON
+            and now - state.last_changed >= timedelta(minutes=self._window_alert)
+        )
+
+    async def _async_notify(self, messages: list[str]) -> None:
+        """Meldung an den eingestellten notify-Dienst senden (Fehler nur loggen)."""
+        service = str(self._notify_service).removeprefix("notify.")
+        if not self.hass.services.has_service("notify", service):
+            _LOGGER.warning("notify-Dienst notify.%s nicht gefunden", service)
+            return
+        try:
+            await self.hass.services.async_call(
+                "notify",
+                service,
+                {"title": "Heizung", "message": "\n".join(messages)},
+                blocking=True,
+            )
+        except HomeAssistantError as error:
+            _LOGGER.warning("Meldung konnte nicht gesendet werden: %s", error)
 
     def _bed_live(self) -> bool:
         if self._bed_entity is None:
@@ -514,6 +602,7 @@ class HeatingController:
                 self._compute()
                 for zone in self.zones.values():
                     await self._async_apply(zone)
+                self._update_problems()
         except Exception:
             _LOGGER.exception("Fehler bei der Heizungssteuerung")
         finally:
@@ -531,7 +620,20 @@ class HeatingController:
     # --- Befehle an die Thermostate --------------------------------------------------------
 
     async def _async_apply(self, zone: Zone) -> None:
-        """Sendet Modus und Temperatur nur an Thermostate, deren Wert abweicht."""
+        """Sendet Modus und Temperatur nur an Thermostate, deren Wert abweicht.
+
+        Ein abgelehnter Befehl wird als Problem der Zone vermerkt; die übrigen Zonen
+        werden trotzdem weiter bedient.
+        """
+        try:
+            await self._async_send(zone)
+        except HomeAssistantError as error:
+            _LOGGER.warning("Zone %s: Befehl abgelehnt: %s", zone.name, error)
+            zone.command_failed = True
+        else:
+            zone.command_failed = False
+
+    async def _async_send(self, zone: Zone) -> None:
         decision = zone.decision
         if decision is None:
             return
@@ -587,6 +689,26 @@ class HeatingController:
                 {"entity_id": entity_ids, "temperature": target},
                 blocking=True,
             )
+
+
+_PROBLEM_TEXTS: dict[str, dict[str, str]] = {
+    "de": {
+        const.PROBLEM_UNAVAILABLE: "{zone}: Thermostat seit über {minutes} Minuten nicht erreichbar.",
+        const.PROBLEM_COMMAND: "{zone}: Das Thermostat hat einen Befehl abgelehnt.",
+        const.PROBLEM_WINDOW: "{zone}: Fenster ist ungewöhnlich lange offen.",
+    },
+    "en": {
+        const.PROBLEM_UNAVAILABLE: "{zone}: thermostat unreachable for over {minutes} minutes.",
+        const.PROBLEM_COMMAND: "{zone}: the thermostat rejected a command.",
+        const.PROBLEM_WINDOW: "{zone}: window has been open unusually long.",
+    },
+}
+
+
+def _problem_message(hass: HomeAssistant, zone: str, problem: str) -> str:
+    """Meldungstext in der Sprache von Home Assistant (Deutsch, sonst Englisch)."""
+    texts = _PROBLEM_TEXTS["de" if hass.config.language.startswith("de") else "en"]
+    return texts[problem].format(zone=zone, minutes=const.UNAVAILABLE_ALERT_MINUTES)
 
 
 def _clamp_to_thermostat(target: float, state: State) -> float:

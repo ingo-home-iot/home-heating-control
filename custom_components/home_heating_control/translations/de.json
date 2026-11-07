@@ -15,7 +15,9 @@
           "bed_entity": "Bett-Sensor",
           "bed_delay": "Bett: Wartezeit",
           "preheat_minutes_per_kelvin": "Vorheizen: Minuten je Grad",
-          "preheat_max_minutes": "Vorheizen: Höchstzeit"
+          "preheat_max_minutes": "Vorheizen: Höchstzeit",
+          "notify_service": "Meldungen senden an",
+          "window_open_alert": "Meldung: Fenster offen nach"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -28,7 +30,9 @@
           "bed_entity": "Optional. „An“ = alle im Bett (z. B. Bettwaage). Wirkt nur in Zonen mit „Folgt dem Bett“.",
           "bed_delay": "Minuten, die der Bett-Zustand gleich bleiben muss, bevor er gilt (kurzes Aufstehen zählt nicht).",
           "preheat_minutes_per_kelvin": "So lange braucht der Raum etwa, um 1 °C wärmer zu werden. Daraus ergibt sich, wie früh vor dem Zeitplanstart geheizt wird.",
-          "preheat_max_minutes": "So früh vor dem Zeitplanstart wird höchstens mit dem Vorheizen begonnen."
+          "preheat_max_minutes": "So früh vor dem Zeitplanstart wird höchstens mit dem Vorheizen begonnen.",
+          "notify_service": "Optional. Name des notify-Dienstes, z. B. notify.mobile_app_mein_handy. Gemeldet werden: Thermostat über 30 Minuten nicht erreichbar, Thermostat lehnt einen Befehl ab, Fenster zu lange offen.",
+          "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie."
         }
       },
       "reconfigure": {
@@ -44,7 +48,9 @@
           "bed_entity": "Bett-Sensor",
           "bed_delay": "Bett: Wartezeit",
           "preheat_minutes_per_kelvin": "Vorheizen: Minuten je Grad",
-          "preheat_max_minutes": "Vorheizen: Höchstzeit"
+          "preheat_max_minutes": "Vorheizen: Höchstzeit",
+          "notify_service": "Meldungen senden an",
+          "window_open_alert": "Meldung: Fenster offen nach"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -57,7 +63,9 @@
           "bed_entity": "Optional. „An“ = alle im Bett (z. B. Bettwaage). Wirkt nur in Zonen mit „Folgt dem Bett“.",
           "bed_delay": "Minuten, die der Bett-Zustand gleich bleiben muss, bevor er gilt (kurzes Aufstehen zählt nicht).",
           "preheat_minutes_per_kelvin": "So lange braucht der Raum etwa, um 1 °C wärmer zu werden. Daraus ergibt sich, wie früh vor dem Zeitplanstart geheizt wird.",
-          "preheat_max_minutes": "So früh vor dem Zeitplanstart wird höchstens mit dem Vorheizen begonnen."
+          "preheat_max_minutes": "So früh vor dem Zeitplanstart wird höchstens mit dem Vorheizen begonnen.",
+          "notify_service": "Optional. Name des notify-Dienstes, z. B. notify.mobile_app_mein_handy. Gemeldet werden: Thermostat über 30 Minuten nicht erreichbar, Thermostat lehnt einen Befehl ab, Fenster zu lange offen.",
+          "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie."
         }
       },
       "areas": {
@@ -189,6 +197,11 @@
       },
       "zone_eco_offset": {
         "name": "ECO-Absenkung"
+      }
+    },
+    "binary_sensor": {
+      "problem": {
+        "name": "Problem"
       }
     }
   }

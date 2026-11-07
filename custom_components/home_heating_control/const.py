@@ -14,6 +14,8 @@ CONF_AWAY_ECO = "away_eco_heating"
 CONF_REACTION_TIME = "window_reaction_time"
 CONF_BED = "bed_entity"
 CONF_BED_DELAY = "bed_delay"
+CONF_NOTIFY = "notify_service"
+CONF_WINDOW_ALERT = "window_open_alert"
 CONF_PREHEAT_MIN_PER_K = "preheat_minutes_per_kelvin"
 CONF_PREHEAT_MAX = "preheat_max_minutes"
 
@@ -41,6 +43,14 @@ FLAGS = (FLAG_WINTER, FLAG_PARTY, FLAG_COMFORT_ALWAYS, FLAG_ECO)
 DEFAULT_FROST_THRESHOLD = 5
 DEFAULT_REACTION_TIME = 3
 DEFAULT_BED_DELAY = 10  # Minuten, bis ein Wechsel des Bett-Zustands wirkt
+DEFAULT_WINDOW_ALERT = 0  # Minuten; 0 = keine Meldung bei lange offenem Fenster
+UNAVAILABLE_ALERT_MINUTES = 30  # so lange darf ein Thermostat nicht erreichbar sein
+WATCHDOG_INTERVAL = 1  # Minuten zwischen zwei Prüfungen auf Probleme
+
+PROBLEM_UNAVAILABLE = "thermostat_unavailable"
+PROBLEM_COMMAND = "command_failed"
+PROBLEM_WINDOW = "window_open_long"
+
 DEFAULT_PREHEAT_MIN_PER_K = 20  # Minuten Vorlauf je Kelvin Temperaturunterschied
 DEFAULT_PREHEAT_MAX = 90  # Minuten, so früh startet das Vorheizen höchstens
 PREHEAT_CHECK_INTERVAL = 5  # Minuten zwischen zwei Prüfungen
