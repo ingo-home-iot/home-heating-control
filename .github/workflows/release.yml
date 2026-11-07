@@ -1,0 +1,39 @@
+name: Release
+
+# Legt Tag und GitHub-Release an, sobald sich die Version in manifest.json
+# auf main ändert. Versionen 0.x werden als Pre-release veröffentlicht.
+# Manuell auslösbar (Actions -> Release -> Run workflow), z. B. um ein
+# Release für die aktuelle Version nachzuholen.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - custom_components/home_heating_control/manifest.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release anlegen, falls es den Tag noch nicht gibt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(jq -r .version custom_components/home_heating_control/manifest.json)
+          tag="v${version}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag existiert bereits - nichts zu tun."
+            exit 0
+          fi
+          flags=""
+          case "$version" in
+            0.*|*-*) flags="--prerelease" ;;
+          esac
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" \
+            --generate-notes $flags
