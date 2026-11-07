@@ -87,6 +87,9 @@
     "abort": {
       "already_configured": "Home Heating Control is already set up.",
       "reconfigure_successful": "Settings saved."
+    },
+    "error": {
+      "notify_not_found": "This notify service does not exist. Find the name under Developer tools → Actions, e.g. notify.mobile_app_my_phone."
     }
   },
   "config_subentries": {

@@ -198,3 +198,28 @@ async def test_reconfigure_skips_areas_with_manual_zone(hass: HomeAssistant) -> 
     )
     flow = await hass.config_entries.flow.async_configure(flow["flow_id"], GLOBAL_INPUT)
     assert list(flow["data_schema"]({})[const.CONF_AREAS]) == ["bad"]
+
+
+async def test_unknown_notify_service_is_rejected(hass: HomeAssistant) -> None:
+    """Ein notify-Dienst, den es nicht gibt, wird schon im Dialog abgelehnt."""
+    result = await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], GLOBAL_INPUT | {const.CONF_NOTIFY: "notify.gibt_es_nicht"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {const.CONF_NOTIFY: "notify_not_found"}
+
+
+async def test_existing_notify_service_is_accepted(hass: HomeAssistant) -> None:
+    from pytest_homeassistant_custom_component.common import async_mock_service
+
+    async_mock_service(hass, "notify", "handy")
+    result = await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], GLOBAL_INPUT | {const.CONF_NOTIFY: "notify.handy"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
