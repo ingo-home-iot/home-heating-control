@@ -16,7 +16,7 @@ from homeassistant.config_entries import (
     ConfigSubentryFlow,
     SubentryFlowResult,
 )
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 
 from .const import (
@@ -70,6 +70,14 @@ def _offset_selector() -> selector.NumberSelector:
             unit_of_measurement="°C",
         )
     )
+
+
+def _notify_error(hass: HomeAssistant, user_input: dict[str, Any]) -> dict[str, str]:
+    """Fehler für das Feld notify-Dienst, wenn der Dienst nicht existiert."""
+    name = str(user_input.get(CONF_NOTIFY) or "").strip().removeprefix("notify.")
+    if name and not hass.services.has_service("notify", name):
+        return {CONF_NOTIFY: "notify_not_found"}
+    return {}
 
 
 def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
@@ -233,7 +241,10 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
         """Ersteinrichtung."""
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
+        errors: dict[str, str] = {}
         if user_input is not None:
+            errors = _notify_error(self.hass, user_input)
+        if user_input is not None and not errors:
             self._global = user_input
             self._candidates = {c.area_id: c for c in discover_areas(self.hass, set())}
             if self._candidates:
@@ -241,7 +252,11 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(
                 title="Home Heating Control", data=user_input
             )
-        return self.async_show_form(step_id="user", data_schema=_global_schema({}))
+        return self.async_show_form(
+            step_id="user",
+            data_schema=_global_schema(user_input or {}),
+            errors=errors,
+        )
 
     async def async_step_areas(
         self, user_input: dict[str, Any] | None = None
@@ -291,7 +306,10 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Globale Einstellungen ändern."""
         entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
         if user_input is not None:
+            errors = _notify_error(self.hass, user_input)
+        if user_input is not None and not errors:
             known = {sub.data.get(CONF_AREA_ID) for sub in entry.subentries.values()}
             used = {
                 thermostat
@@ -315,7 +333,8 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_update_reload_and_abort(entry, data=self._global)
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=_global_schema(dict(entry.data)),
+            data_schema=_global_schema(user_input or dict(entry.data)),
+            errors=errors,
         )
 
 
