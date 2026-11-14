@@ -15,6 +15,7 @@ from custom_components.home_heating_control.engine import (
     round_half_up,
     sun_in_window,
     sun_reduction,
+    sun_share,
 )
 
 # Beispielwerte aus dem laufenden Haushalt: Basis 22 °C
@@ -340,23 +341,57 @@ def test_preheat_window_open_still_off() -> None:
 
 
 @pytest.mark.parametrize(
-    ("lux", "maximum", "expected"),
+    ("share", "maximum", "expected"),
     [
         (None, 0.5, 0.0),  # kein Messwert
-        (5000, 0.5, 0.0),  # zu dunkel
-        (15000, 0.5, 0.0),  # halbe Stufe von 0,5 wird auf 0,0 abgerundet
-        (24999, 0.5, 0.0),
-        (25000, 0.5, 0.5),  # kräftige Sonne: voll
-        (60000, 0.5, 0.5),
-        (15000, 1.0, 0.5),  # halbe Stufe
-        (25000, 1.0, 1.0),
-        (25000, 0.0, 0.0),  # Höchstwert 0 = aus
+        (0.3, 0.5, 0.0),  # bedeckt
+        (0.5, 0.5, 0.0),  # halbe Stufe von 0,5 wird auf 0,0 abgerundet
+        (0.74, 0.5, 0.0),
+        (0.75, 0.5, 0.5),  # kräftige Sonne: voll
+        (1.2, 0.5, 0.5),
+        (0.5, 1.0, 0.5),  # halbe Stufe
+        (0.75, 1.0, 1.0),
+        (0.9, 0.0, 0.0),  # Höchstwert 0 = aus
     ],
 )
 def test_sun_reduction_stages(
-    lux: float | None, maximum: float, expected: float
+    share: float | None, maximum: float, expected: float
 ) -> None:
-    assert sun_reduction(lux, 15000, 25000, maximum, 0.5) == expected
+    assert sun_reduction(share, 0.5, 0.75, maximum, 0.5) == expected
+
+
+@pytest.mark.parametrize(
+    ("lux", "elevation", "expected"),
+    [
+        (21500, 15.4, 0.95),  # klarer Vormittag im November (Messung vom 14.11.)
+        (26800, 18.25, 1.0),  # klarer Mittag
+        (6000, 12.0, 0.34),  # bedeckt
+        (30000, 90.0, 0.35),  # Zenit
+    ],
+)
+def test_sun_share_matches_measurements(
+    lux: float, elevation: float, expected: float
+) -> None:
+    share = sun_share(lux, elevation, 85000)
+    assert share is not None
+    assert share == pytest.approx(expected, abs=0.05)
+
+
+@pytest.mark.parametrize(
+    ("lux", "elevation"), [(None, 15.0), (20000, None), (20000, 0.0), (20000, -5.0)]
+)
+def test_sun_share_unknown(lux: float | None, elevation: float | None) -> None:
+    assert sun_share(lux, elevation, 85000) is None
+
+
+def test_sun_share_low_sun_needs_less_light() -> None:
+    """Gleiche Helligkeit: bei tiefer Sonne ist das viel, bei hoher Sonne wenig."""
+    low_sun = sun_share(15000, 10.0, 85000)
+    high_sun = sun_share(15000, 30.0, 85000)
+    assert low_sun is not None
+    assert high_sun is not None
+    assert low_sun > 1.0
+    assert high_sun < 0.4
 
 
 @pytest.mark.parametrize(

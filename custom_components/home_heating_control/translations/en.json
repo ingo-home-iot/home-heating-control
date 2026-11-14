@@ -21,8 +21,9 @@
           "manual_override_minutes": "Respect manual changes for",
           "vacation_lead_hours": "Vacation: lead time before return",
           "sun_entity": "Sun: brightness sensor",
-          "sun_threshold_low": "Sun: half reduction from",
-          "sun_threshold_high": "Sun: full reduction from",
+          "sun_reference_lux": "Sun: brightness at clear sky",
+          "sun_share_low": "Sun: half reduction from",
+          "sun_share_high": "Sun: full reduction from",
           "sun_max_reduction": "Sun: maximum reduction",
           "sun_delay_minutes": "Sun: delay"
         },
@@ -43,8 +44,9 @@
           "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before.",
           "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule).",
           "sun_entity": "Optional. Outdoor brightness in lux (e.g. from a weather station). Empty = no sun reduction. Only applies to zones with a window direction and only at comfort.",
-          "sun_threshold_low": "From this brightness (lux) the sun counts as shining. Half the maximum reduction applies (rounded down to 0.5 °C).",
-          "sun_threshold_high": "From this brightness (lux) the sun counts as strong. The full maximum reduction applies. Must be at least the lower value.",
+          "sun_reference_lux": "What the sensor reads at clear sky with the sun at the zenith (lux). From this the integration works out how bright a clear sky would be at the current sun height. The attribute \"sun_share\" on the decision sensor shows the current percentage. Meant for the heating season.",
+          "sun_share_low": "Share of the clear-sky brightness in percent from which the sun counts as shining. Half the maximum reduction applies (rounded down to 0.5 °C). Overcast is usually 20 to 40 %.",
+          "sun_share_high": "Share of the clear-sky brightness in percent from which the sun counts as strong. The full maximum reduction applies. Must be at least the lower value.",
           "sun_max_reduction": "How much the comfort setpoint is lowered in strong sun (0 = off). The thermostat receives values in 0.5 °C steps.",
           "sun_delay_minutes": "Minutes a new sun level must hold before it applies (avoids flip-flopping with passing clouds)."
         }
@@ -68,8 +70,9 @@
           "manual_override_minutes": "Respect manual changes for",
           "vacation_lead_hours": "Vacation: lead time before return",
           "sun_entity": "Sun: brightness sensor",
-          "sun_threshold_low": "Sun: half reduction from",
-          "sun_threshold_high": "Sun: full reduction from",
+          "sun_reference_lux": "Sun: brightness at clear sky",
+          "sun_share_low": "Sun: half reduction from",
+          "sun_share_high": "Sun: full reduction from",
           "sun_max_reduction": "Sun: maximum reduction",
           "sun_delay_minutes": "Sun: delay"
         },
@@ -90,8 +93,9 @@
           "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before.",
           "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule).",
           "sun_entity": "Optional. Outdoor brightness in lux (e.g. from a weather station). Empty = no sun reduction. Only applies to zones with a window direction and only at comfort.",
-          "sun_threshold_low": "From this brightness (lux) the sun counts as shining. Half the maximum reduction applies (rounded down to 0.5 °C).",
-          "sun_threshold_high": "From this brightness (lux) the sun counts as strong. The full maximum reduction applies. Must be at least the lower value.",
+          "sun_reference_lux": "What the sensor reads at clear sky with the sun at the zenith (lux). From this the integration works out how bright a clear sky would be at the current sun height. The attribute \"sun_share\" on the decision sensor shows the current percentage. Meant for the heating season.",
+          "sun_share_low": "Share of the clear-sky brightness in percent from which the sun counts as shining. Half the maximum reduction applies (rounded down to 0.5 °C). Overcast is usually 20 to 40 %.",
+          "sun_share_high": "Share of the clear-sky brightness in percent from which the sun counts as strong. The full maximum reduction applies. Must be at least the lower value.",
           "sun_max_reduction": "How much the comfort setpoint is lowered in strong sun (0 = off). The thermostat receives values in 0.5 °C steps.",
           "sun_delay_minutes": "Minutes a new sun level must hold before it applies (avoids flip-flopping with passing clouds)."
         }

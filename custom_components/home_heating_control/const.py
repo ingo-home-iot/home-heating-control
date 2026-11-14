@@ -21,8 +21,9 @@ CONF_WINDOW_ALERT = "window_open_alert"
 CONF_PREHEAT_MIN_PER_K = "preheat_minutes_per_kelvin"
 CONF_PREHEAT_MAX = "preheat_max_minutes"
 CONF_SUN_ENTITY = "sun_entity"
-CONF_SUN_LOW = "sun_threshold_low"
-CONF_SUN_HIGH = "sun_threshold_high"
+CONF_SUN_REFERENCE = "sun_reference_lux"
+CONF_SUN_LOW = "sun_share_low"
+CONF_SUN_HIGH = "sun_share_high"
 CONF_SUN_MAX = "sun_max_reduction"
 CONF_SUN_DELAY = "sun_delay_minutes"
 
@@ -84,14 +85,19 @@ PREHEAT_CHECK_INTERVAL = 5  # Minuten zwischen zwei Prüfungen
 DEFAULT_DISABLED_MIN_TEMP = 5  # °C; 0 = ausgeschaltete Zonen bleiben bei Frost aus
 DEFAULT_PARTY_HOURS = 4  # Stunden; 0 = Party endet nicht von selbst
 DEFAULT_PARTY_TEMP = 0  # °C; 0 = Party heizt auf die Komforttemperatur der Zone
-DEFAULT_SUN_LOW = 15000  # lx; ab hier gilt "Sonne scheint" (halbe Absenkung)
-DEFAULT_SUN_HIGH = 25000  # lx; ab hier gilt "Sonne scheint kräftig" (volle Absenkung)
+DEFAULT_SUN_REFERENCE = (
+    85000  # lx bei klarem Himmel und Sonne im Zenit (Winter-Näherung)
+)
+DEFAULT_SUN_LOW = (
+    50  # % des Klarhimmel-Werts; ab hier "Sonne scheint" (halbe Absenkung)
+)
+DEFAULT_SUN_HIGH = (
+    75  # % des Klarhimmel-Werts; ab hier "kräftige Sonne" (volle Absenkung)
+)
 DEFAULT_SUN_MAX = 0.5  # °C; größte Absenkung bei Sonne
 DEFAULT_SUN_DELAY = 10  # Minuten, die eine neue Sonnenstufe anhalten muss
 SUN_STEP = 0.5  # °C; kleinste Schrittweite der Absenkung (Thermostat-Auflösung)
-SUN_MIN_ELEVATION = (
-    3.0  # Grad über dem Horizont, darunter scheint keine Sonne ins Fenster
-)
+SUN_MIN_ELEVATION = 5.0  # Grad über dem Horizont; darunter keine Absenkung
 SUN_WINDOW_ANGLE = 60.0  # Grad; so weit darf die Sonne seitlich vom Fenster stehen
 SUN_CHECK_INTERVAL = 5  # Minuten zwischen zwei Prüfungen des Sonnenstands
 

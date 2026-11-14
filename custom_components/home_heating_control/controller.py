@@ -38,6 +38,7 @@ from .engine import (
     frost,
     sun_in_window,
     sun_reduction,
+    sun_share,
 )
 
 if TYPE_CHECKING:
@@ -135,11 +136,15 @@ class HeatingController:
             data.get(const.CONF_VACATION_LEAD, const.DEFAULT_VACATION_LEAD)
         )
         self._sun_entity: str | None = data.get(const.CONF_SUN_ENTITY) or None
-        self._sun_low: float = float(
-            data.get(const.CONF_SUN_LOW, const.DEFAULT_SUN_LOW)
+        self._sun_reference: float = float(
+            data.get(const.CONF_SUN_REFERENCE, const.DEFAULT_SUN_REFERENCE)
         )
-        self._sun_high: float = float(
-            data.get(const.CONF_SUN_HIGH, const.DEFAULT_SUN_HIGH)
+        # Schwellen sind in Prozent eingestellt, gerechnet wird mit Anteilen
+        self._sun_low: float = (
+            float(data.get(const.CONF_SUN_LOW, const.DEFAULT_SUN_LOW)) / 100
+        )
+        self._sun_high: float = (
+            float(data.get(const.CONF_SUN_HIGH, const.DEFAULT_SUN_HIGH)) / 100
         )
         self._sun_max: float = float(
             data.get(const.CONF_SUN_MAX, const.DEFAULT_SUN_MAX)
@@ -147,7 +152,7 @@ class HeatingController:
         self._sun_delay: float = float(
             data.get(const.CONF_SUN_DELAY, const.DEFAULT_SUN_DELAY)
         )
-        self.sun_lux_level: float | None = None  # zuletzt übernommene Helligkeit
+        self.sun_share: float | None = None  # zuletzt gemessener Sonnenanteil
         self.sun_stage_reduction = 0.0  # übernommene Absenkung (nach Wartezeit)
         self._sun_pending: float | None = None
         self._sun_timer: CALLBACK_TYPE | None = None
@@ -322,14 +327,23 @@ class HeatingController:
             and any(zone.sun_azimuths for zone in self.zones.values())
         )
 
+    def _sun_elevation(self) -> float | None:
+        sun = self.hass.states.get("sun.sun")
+        return None if sun is None else _float_attr(sun.attributes.get("elevation"))
+
     def _sun_live(self) -> float:
-        """Absenkung, die zur aktuellen Helligkeit passt (noch ohne Wartezeit und Sonnenstand)."""
+        """Absenkung, die zu Helligkeit und Sonnenhöhe jetzt passt (noch ohne Wartezeit)."""
         if not self._sun_active():
             return 0.0
-        lux = _float_state(self.hass, self._sun_entity)
-        self.sun_lux_level = lux
+        elevation = self._sun_elevation()
+        if elevation is None or elevation < const.SUN_MIN_ELEVATION:
+            self.sun_share = None
+            return 0.0
+        self.sun_share = sun_share(
+            _float_state(self.hass, self._sun_entity), elevation, self._sun_reference
+        )
         return sun_reduction(
-            lux, self._sun_low, self._sun_high, self._sun_max, const.SUN_STEP
+            self.sun_share, self._sun_low, self._sun_high, self._sun_max, const.SUN_STEP
         )
 
     @callback
@@ -341,7 +355,11 @@ class HeatingController:
 
     @callback
     def _handle_sun_change(self, _event: Event[EventStateChangedData]) -> None:
-        """Helligkeit: eine neue Stufe gilt erst, wenn sie die Wartezeit durchgehalten hat.
+        self._evaluate_sun()
+
+    @callback
+    def _evaluate_sun(self) -> None:
+        """Eine neue Stufe gilt erst, wenn sie die Wartezeit durchgehalten hat.
 
         Die Helligkeit meldet sich oft; der Zeitgeber läuft deshalb weiter, solange die
         neue Stufe dieselbe bleibt (sonst käme er bei laufenden Meldungen nie ans Ziel).
@@ -371,8 +389,11 @@ class HeatingController:
 
     @callback
     def _handle_sun_tick(self, _now: datetime) -> None:
-        """Sonnenstand wandert: regelmäßig prüfen, ob sich etwas für eine Zone ändert."""
-        if self._started and any(
+        """Sonnenstand wandert: Stufe und Zonen regelmäßig neu prüfen."""
+        if not self._started:
+            return
+        self._evaluate_sun()
+        if any(
             self._zone_sun_reduction(zone) != zone.sun_reduction
             for zone in self.zones.values()
         ):
