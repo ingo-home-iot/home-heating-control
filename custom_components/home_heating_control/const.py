@@ -42,14 +42,14 @@ CONF_AREAS = "areas"
 
 # Himmelsrichtung der Fenster -> Azimut in Grad (Norden = 0, Osten = 90)
 SUN_DIRECTIONS: dict[str, int] = {
-    "N": 0,
-    "NE": 45,
-    "E": 90,
-    "SE": 135,
-    "S": 180,
-    "SW": 225,
-    "W": 270,
-    "NW": 315,
+    "n": 0,
+    "ne": 45,
+    "e": 90,
+    "se": 135,
+    "s": 180,
+    "sw": 225,
+    "w": 270,
+    "nw": 315,
 }
 
 DEFAULT_ECO_OFFSET = -3

@@ -260,14 +260,14 @@
   "selector": {
     "sun_direction": {
       "options": {
-        "N": "North",
-        "NE": "Northeast",
-        "E": "East",
-        "SE": "Southeast",
-        "S": "South",
-        "SW": "Southwest",
-        "W": "West",
-        "NW": "Northwest"
+        "n": "North",
+        "ne": "Northeast",
+        "e": "East",
+        "se": "Southeast",
+        "s": "South",
+        "sw": "Southwest",
+        "w": "West",
+        "nw": "Northwest"
       }
     }
   }

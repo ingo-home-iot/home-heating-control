@@ -938,7 +938,7 @@ async def _sun_world(
             const.CONF_MANUAL: manual,
         },
         zone_extra={
-            const.CONF_SUN_DIRECTIONS: ["SE"] if directions is None else directions
+            const.CONF_SUN_DIRECTIONS: ["se"] if directions is None else directions
         },
         target=20,
     )
@@ -1002,7 +1002,7 @@ async def test_sun_timer_survives_repeated_readings(
 
 async def test_sun_ignored_for_zone_facing_away(hass: HomeAssistant, freezer) -> None:
     """Zone mit Nordwest-Fenstern: Südost-Sonne ändert nichts."""
-    _, temps = await _sun_world(hass, directions=["NW"])
+    _, temps = await _sun_world(hass, directions=["nw"])
     _set_sun(hass, 40000)
     await _tick(hass, freezer, 15)
     assert not temps

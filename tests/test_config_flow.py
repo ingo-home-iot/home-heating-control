@@ -277,10 +277,10 @@ async def test_zone_sun_directions_are_saved(hass: HomeAssistant) -> None:
             const.CONF_COMFORT_OFFSET: 0,
             const.CONF_ECO_OFFSET: -3,
             const.CONF_ECO_RELATIVE: False,
-            const.CONF_SUN_DIRECTIONS: ["SE"],
+            const.CONF_SUN_DIRECTIONS: ["se"],
         },
     )
     assert done["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     sub = next(iter(entry.subentries.values()))
-    assert sub.data[const.CONF_SUN_DIRECTIONS] == ["SE"]
+    assert sub.data[const.CONF_SUN_DIRECTIONS] == ["se"]
