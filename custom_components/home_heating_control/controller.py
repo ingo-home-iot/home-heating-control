@@ -65,7 +65,8 @@ class Zone:
     eco: bool = False
     enabled: bool = True
     window_open: bool = False
-    sun_reduction: float = 0.0
+    sun_reduction: float = 0.0  # Absenkung laut Sonne (Eingang der Entscheidung)
+    sun_applied: float = 0.0  # davon tatsächlich im Sollwert abgezogen
     decision: Decision | None = None
     comfort_temp: int | None = None
     eco_temp: int | None = None
@@ -975,6 +976,14 @@ class HeatingController:
             inputs = self._inputs(zone, persons_home)
             zone.decision = decide(inputs)
             zone.sun_reduction = inputs.sun_reduction
+            # Abgezogen wird nur bei Komfort (siehe engine.decide), sonst steht 0
+            zone.sun_applied = (
+                inputs.sun_reduction
+                if zone.decision.mode is HvacTarget.HEAT
+                and zone.decision.reason
+                in (Reason.SCHEDULE_COMFORT, Reason.COMFORT_FORCED)
+                else 0.0
+            )
             if (
                 zone.manual_until is not None
                 and zone.decision.reason is not zone.manual_reason
