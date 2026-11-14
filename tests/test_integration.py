@@ -1053,6 +1053,9 @@ async def test_sun_only_at_comfort(hass: HomeAssistant, freezer) -> None:
     sensor = hass.states.get("sensor.bad_decision")
     assert sensor is not None
     assert sensor.attributes["target_temperature"] == 18
+    # Sonne scheint ins Fenster, wird aber bei ECO nicht abgezogen
+    assert sensor.attributes["sun_active"] is True
+    assert sensor.attributes["sun_reduction"] == 0
 
 
 async def test_sun_value_is_not_taken_as_manual_change(hass: HomeAssistant) -> None:
@@ -1158,3 +1161,21 @@ async def test_old_lux_thresholds_in_entry_are_ignored(
     _set_sun(hass, 30000)
     await _tick(hass, freezer, 11)
     assert temps[-1].data["temperature"] == 19.5
+
+
+async def test_sun_attributes_at_comfort_with_sun(hass: HomeAssistant) -> None:
+    """Komfort und Sonne im Fenster: aktiv, und die Absenkung wird angewendet."""
+    await _sun_world(hass, lux=30000)
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.attributes["sun_active"] is True
+    assert sensor.attributes["sun_reduction"] == 0.5
+
+
+async def test_sun_attributes_when_sun_is_behind_the_house(hass: HomeAssistant) -> None:
+    """Sonne steht nicht im Fenster: weder aktiv noch angewendet."""
+    await _sun_world(hass, lux=30000, azimuth=300.0)
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.attributes["sun_active"] is False
+    assert sensor.attributes["sun_reduction"] == 0

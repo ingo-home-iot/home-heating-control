@@ -125,8 +125,11 @@ Ablauf:
 
 Sie gilt nur bei Komfort (Grund `schedule_comfort` oder `comfort_forced`). **Nicht** betroffen
 sind ECO, Abwesenheit, Fenster offen, Frostschutz, Party mit eigener Party-Temperatur und
-Vorheizen. Der Entscheidungssensor zeigt die aktuelle Absenkung im Attribut `sun_reduction`
-und den Sonnenanteil in Prozent im Attribut `sun_share`. Der eigene Sonnenwert wird nicht als
+Vorheizen. Der Entscheidungssensor zeigt im Attribut `sun_reduction` die **tatsächlich
+abgezogene** Absenkung (bei ECO also 0), im Attribut `sun_active`, ob die Sonne gerade in das
+Fenster der Zone scheint und die Stufe erreicht ist (auch bei ECO, dann ohne Wirkung), und den
+Sonnenanteil in Prozent im Attribut `sun_share` (ab 0.4.3 ist `sun_reduction` nur noch der
+angewendete Wert). Der eigene Sonnenwert wird nicht als
 Handverstellung gewertet.
 
 **Änderung gegenüber 0.4.1:** Dort galten feste Lux-Schwellen (15 000 und 25 000 lx). Die

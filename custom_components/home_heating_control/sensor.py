@@ -81,7 +81,8 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
             "decision_reason": None if decision is None else decision.reason.value,
             "preheat": zone.preheat_event is not None,
             "vacation": self.controller.vacation_phase(),
-            "sun_reduction": zone.sun_reduction,
+            "sun_active": zone.sun_reduction > 0,
+            "sun_reduction": zone.sun_applied,
             "sun_share": None
             if self.controller.sun_share is None
             else round(self.controller.sun_share * 100),
