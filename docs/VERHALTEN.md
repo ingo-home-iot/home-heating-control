@@ -49,7 +49,7 @@ nur einen Wert, beide sind immer gleich.
 
 ## Eingänge je Zone
 
-Basis-Solltemperatur, Komfort-Offset, Eco-Offset, Fensterkontakt (optional),
+Basis-Solltemperatur, Komfort-Offset, Eco-Offset, Fensterkontakt (optional), Fensterrichtung für die Sonne (optional),
 Bett-Sensor (optional, mit „Folgt dem Bett" je Zone),
 Personen zu Hause (Anzahl), Zeitplan (an/aus), Außentemperatur, Frostgrenze,
 Option „bei Abwesenheit mit Eco heizen" (Standard: ja).
@@ -83,6 +83,39 @@ Reihenfolge, die erste zutreffende Regel gilt:
   Mittelwert von `current_temperature` der Thermostate der Zone. Einmal gestartet, bleibt
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
+
+## Sonnen-Absenkung (optional, ab 0.4.1)
+
+Scheint die Sonne durchs Fenster, wärmt sie den Raum ohne Heizung; das Thermostat am
+Heizkörper merkt das oft spät. Die Steuerung senkt deshalb die **Komfort**-Solltemperatur
+einer Zone leicht ab, solange die Sonne in ihr Fenster scheint.
+
+Eingänge:
+
+- **Helligkeits-Sensor** (allgemeine Einstellungen, Lux, z. B. von der Wetterstation). Leer = die
+  ganze Funktion ist aus.
+- **Fensterrichtung** je Zone (N, NO, O, SO, S, SW, W, NW, auch mehrere). Leer = aus (Standard).
+- `sun.sun` für den Sonnenstand (Azimut und Höhe), den Home Assistant ohnehin mitbringt.
+
+Ablauf:
+
+1. **Stufe nach Helligkeit**: unter dem unteren Schwellwert (Standard 15 000 lx) keine
+   Absenkung, ab dem unteren die **halbe**, ab dem oberen (Standard 25 000 lx) die **volle**
+   Absenkung. Die **größte Absenkung** ist einstellbar (Standard 0,5 °C, 0 bis 2 °C).
+2. Jede Stufe wird auf ganze **0,5-°C-Schritte abgerundet** (Thermostat-Auflösung). Bei einer
+   größten Absenkung von 0,5 °C gibt es also nur „keine" oder „voll"; die halbe Stufe wirkt
+   erst ab 1 °C.
+3. **Wartezeit** (Standard 10 min): Eine neue Stufe gilt erst, wenn sie so lange unverändert
+   angehalten hat, in beide Richtungen. Vorbeiziehende Wolken erzeugen kein Hin und Her.
+4. **Sonne im Fenster**: Die Sonne muss mehr als 3° über dem Horizont stehen und höchstens
+   60° seitlich der Fensterrichtung. Der Sonnenstand wird alle 5 Minuten geprüft.
+5. Die Absenkung wird von der **gerundeten** Komforttemperatur abgezogen (20 °C wird 19,5 °C).
+   Das Thermostat bekommt damit Werte im 0,5-°C-Raster.
+
+Sie gilt nur bei Komfort (Grund `schedule_comfort` oder `comfort_forced`). **Nicht** betroffen
+sind ECO, Abwesenheit, Fenster offen, Frostschutz, Party mit eigener Party-Temperatur und
+Vorheizen. Der Entscheidungssensor zeigt die aktuelle Absenkung im Attribut `sun_reduction`.
+Der eigene Sonnenwert wird nicht als Handverstellung gewertet.
 
 ## Raumtemperatur-Sensor (optional, ab 0.3.0)
 

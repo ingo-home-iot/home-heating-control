@@ -13,6 +13,8 @@ from custom_components.home_heating_control.engine import (
     decide,
     eco_temperature,
     round_half_up,
+    sun_in_window,
+    sun_reduction,
 )
 
 # Beispielwerte aus dem laufenden Haushalt: Basis 22 °C
@@ -332,3 +334,78 @@ def test_schedule_on_keeps_schedule_reason_with_preheat() -> None:
 
 def test_preheat_window_open_still_off() -> None:
     assert decide(zone(preheat=True, window_open=True)).mode is HvacTarget.OFF
+
+
+# --- Sonne --------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("lux", "maximum", "expected"),
+    [
+        (None, 0.5, 0.0),  # kein Messwert
+        (5000, 0.5, 0.0),  # zu dunkel
+        (15000, 0.5, 0.0),  # halbe Stufe von 0,5 wird auf 0,0 abgerundet
+        (24999, 0.5, 0.0),
+        (25000, 0.5, 0.5),  # kräftige Sonne: voll
+        (60000, 0.5, 0.5),
+        (15000, 1.0, 0.5),  # halbe Stufe
+        (25000, 1.0, 1.0),
+        (25000, 0.0, 0.0),  # Höchstwert 0 = aus
+    ],
+)
+def test_sun_reduction_stages(
+    lux: float | None, maximum: float, expected: float
+) -> None:
+    assert sun_reduction(lux, 15000, 25000, maximum, 0.5) == expected
+
+
+@pytest.mark.parametrize(
+    ("azimuth", "elevation", "facing", "expected"),
+    [
+        (140, 15, [135], True),  # Südost-Fenster, Sonne im Südosten
+        (200, 15, [135], False),  # Sonne schon zu weit im Süden (65°)
+        (190, 15, [135], True),  # 55° seitlich, noch im Fenster
+        (140, 15, [315], False),  # Nordwest-Fenster bekommt keine Südost-Sonne
+        (140, 2, [135], False),  # Sonne zu tief
+        (140, None, [135], False),  # kein Sonnenstand
+        (None, 15, [135], False),
+        (350, 15, [10], True),  # Winkel über Norden hinweg
+        (140, 15, [], False),  # Zone ohne Richtung
+        (140, 15, [315, 135], True),  # mehrere Richtungen
+    ],
+)
+def test_sun_in_window(
+    azimuth: float | None, elevation: float | None, facing: list[float], expected: bool
+) -> None:
+    assert sun_in_window(azimuth, elevation, facing, 3.0, 60.0) is expected
+
+
+def test_sun_lowers_schedule_comfort() -> None:
+    result = decide(zone(schedule_on=True, comfort_offset=-1, sun_reduction=0.5))
+    assert result == Decision(HvacTarget.HEAT, 20.5, Reason.SCHEDULE_COMFORT)
+
+
+def test_sun_lowers_forced_comfort() -> None:
+    result = decide(zone(comfort_always=True, sun_reduction=0.5))
+    assert result == Decision(HvacTarget.HEAT, 21.5, Reason.COMFORT_FORCED)
+
+
+def test_sun_without_reduction_keeps_whole_degrees() -> None:
+    result = decide(zone(schedule_on=True))
+    assert result.temperature == 22
+    assert isinstance(result.temperature, int)
+
+
+def test_sun_does_not_touch_eco() -> None:
+    result = decide(zone(schedule_on=False, eco_offset=-3, sun_reduction=0.5))
+    assert result == Decision(HvacTarget.HEAT, 19, Reason.SCHEDULE_OFF_ECO)
+
+
+def test_sun_does_not_touch_party_temperature() -> None:
+    result = decide(zone(party=True, party_temp=23, sun_reduction=0.5))
+    assert result == Decision(HvacTarget.HEAT, 23, Reason.PARTY)
+
+
+def test_sun_does_not_touch_preheat() -> None:
+    result = decide(zone(schedule_on=False, preheat=True, sun_reduction=0.5))
+    assert result == Decision(HvacTarget.HEAT, 22, Reason.PREHEAT)

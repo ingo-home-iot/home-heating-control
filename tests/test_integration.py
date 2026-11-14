@@ -898,3 +898,180 @@ async def test_room_sensor_unavailable_falls_back_to_thermostat(
     assert sensor is not None
     assert sensor.state == "preheat"
     assert sensor.attributes["room_temperature"] is None
+
+
+# --- Sonnen-Absenkung -----------------------------------------------------------
+
+LUX = "sensor.wetterstation_lux"
+SUN_GLOBAL = {
+    const.CONF_SUN_ENTITY: LUX,
+    const.CONF_SUN_LOW: 15000,
+    const.CONF_SUN_HIGH: 25000,
+    const.CONF_SUN_MAX: 0.5,
+    const.CONF_SUN_DELAY: 10,
+}
+
+
+def _set_sun(hass: HomeAssistant, lux: float, azimuth=140.0, elevation=15.0) -> None:
+    hass.states.async_set(LUX, str(lux))
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": azimuth, "elevation": elevation}
+    )
+
+
+async def _sun_world(
+    hass: HomeAssistant,
+    *,
+    lux: float = 0,
+    directions: list[str] | None = None,
+    global_extra: dict | None = None,
+    manual: float = 0,
+    azimuth: float = 140.0,
+    elevation: float = 15.0,
+):
+    """Winter an, Zeitplan an, Thermostat steht auf Komfort 20 (Basis 21, Bad -1)."""
+    _set_sun(hass, lux, azimuth, elevation)
+    entry, _, temps = await setup(
+        hass,
+        global_extra={
+            **(SUN_GLOBAL if global_extra is None else global_extra),
+            const.CONF_MANUAL: manual,
+        },
+        zone_extra={
+            const.CONF_SUN_DIRECTIONS: ["se"] if directions is None else directions
+        },
+        target=20,
+    )
+    entry.runtime_data.set_flag(const.FLAG_WINTER, True)
+    await hass.async_block_till_done()
+    temps.clear()
+    return entry, temps
+
+
+async def test_sun_lowers_setpoint_after_delay(hass: HomeAssistant, freezer) -> None:
+    """Kräftige Sonne im Südost-Fenster: erst nach der Wartezeit 19,5 statt 20."""
+    _, temps = await _sun_world(hass)
+    _set_sun(hass, 30000)
+    await hass.async_block_till_done()
+    assert not temps
+    await _tick(hass, freezer, 5)
+    assert not temps
+    await _tick(hass, freezer, 6)
+    assert temps[-1].data["temperature"] == 19.5
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.state == "schedule_comfort"
+    assert sensor.attributes["sun_reduction"] == 0.5
+    assert sensor.attributes["target_temperature"] == 19.5
+
+
+async def test_sun_ends_and_setpoint_returns(hass: HomeAssistant, freezer) -> None:
+    """Sonne geht weg: nach der Wartezeit wieder 20."""
+    _, temps = await _sun_world(hass, lux=30000)
+    assert not temps
+    hass.states.async_set(TRV, "heat", {"temperature": 19.5})
+    _set_sun(hass, 2000)
+    await hass.async_block_till_done()
+    await _tick(hass, freezer, 11)
+    assert temps[-1].data["temperature"] == 20
+
+
+async def test_sun_cloud_flicker_does_not_change_setpoint(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Kurze Sonnenphase unter der Wartezeit bleibt ohne Wirkung."""
+    _, temps = await _sun_world(hass)
+    _set_sun(hass, 30000)
+    await _tick(hass, freezer, 4)
+    _set_sun(hass, 1000)
+    await _tick(hass, freezer, 12)
+    assert not temps
+
+
+async def test_sun_timer_survives_repeated_readings(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Der Sensor meldet laufend neue Werte derselben Stufe: Wartezeit läuft trotzdem ab."""
+    _, temps = await _sun_world(hass)
+    for lux in (30000, 31000, 29000, 32000, 30500, 31500, 29500, 30200, 30100, 30300):
+        _set_sun(hass, lux)
+        await _tick(hass, freezer, 1)
+    await _tick(hass, freezer, 2)
+    assert temps[-1].data["temperature"] == 19.5
+
+
+async def test_sun_ignored_for_zone_facing_away(hass: HomeAssistant, freezer) -> None:
+    """Zone mit Nordwest-Fenstern: Südost-Sonne ändert nichts."""
+    _, temps = await _sun_world(hass, directions=["nw"])
+    _set_sun(hass, 40000)
+    await _tick(hass, freezer, 15)
+    assert not temps
+
+
+async def test_sun_ignored_without_direction(hass: HomeAssistant, freezer) -> None:
+    """Zone ohne Fensterrichtung: aus (Standard)."""
+    _, temps = await _sun_world(hass, directions=[])
+    _set_sun(hass, 40000)
+    await _tick(hass, freezer, 15)
+    assert not temps
+
+
+async def test_sun_ignored_without_sensor(hass: HomeAssistant, freezer) -> None:
+    """Kein Helligkeits-Sensor eingestellt: Funktion aus, auch mit Zonenrichtung."""
+    _, temps = await _sun_world(hass, global_extra={})
+    _set_sun(hass, 40000)
+    await _tick(hass, freezer, 15)
+    assert not temps
+
+
+async def test_sun_below_horizon_has_no_effect(hass: HomeAssistant, freezer) -> None:
+    """Sonne zu tief (Dämmerung): keine Absenkung trotz hoher Helligkeit."""
+    _, temps = await _sun_world(hass, elevation=1.0)
+    _set_sun(hass, 40000, elevation=1.0)
+    await _tick(hass, freezer, 15)
+    assert not temps
+
+
+async def test_sun_follows_sun_position(hass: HomeAssistant, freezer) -> None:
+    """Die Sonne wandert erst später ins Fenster: Prüfung alle 5 Minuten greift."""
+    _, temps = await _sun_world(hass, azimuth=60.0)
+    _set_sun(hass, 40000, azimuth=60.0)
+    await _tick(hass, freezer, 15)
+    assert not temps
+    _set_sun(hass, 40000, azimuth=120.0)
+    await _tick(hass, freezer, 6)
+    assert temps[-1].data["temperature"] == 19.5
+
+
+async def test_sun_only_at_comfort(hass: HomeAssistant, freezer) -> None:
+    """Zeitplan aus (ECO 18): die Sonne ändert den ECO-Wert nicht."""
+    _, temps = await _sun_world(hass, lux=30000)
+    hass.states.async_set(SCHED, "off")
+    await hass.async_block_till_done()
+    assert temps[-1].data["temperature"] == 18
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.attributes["target_temperature"] == 18
+
+
+async def test_sun_value_is_not_taken_as_manual_change(hass: HomeAssistant) -> None:
+    """Das Thermostat meldet unseren Sonnenwert zurück: keine Handverstellungs-Pause."""
+    _, temps = await _sun_world(hass, lux=30000, manual=30)
+    hass.states.async_set(TRV, "heat", {"temperature": 19.5})
+    await hass.async_block_till_done()
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert sensor.attributes["target_temperature"] == 19.5
+    assert sensor.attributes["manual_override_until"] is None
+    assert sensor.state == "schedule_comfort"
+    assert not temps
+
+
+async def test_sun_zero_delay_applies_immediately(hass: HomeAssistant) -> None:
+    """Wartezeit 0: sofort."""
+    _, temps = await _sun_world(
+        hass, global_extra={**SUN_GLOBAL, const.CONF_SUN_DELAY: 0}
+    )
+    _set_sun(hass, 30000)
+    await hass.async_block_till_done()
+    assert temps[-1].data["temperature"] == 19.5

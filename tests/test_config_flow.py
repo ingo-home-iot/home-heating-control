@@ -223,3 +223,64 @@ async def test_existing_notify_service_is_accepted(hass: HomeAssistant) -> None:
         result["flow_id"], GLOBAL_INPUT | {const.CONF_NOTIFY: "notify.handy"}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+async def test_sun_thresholds_must_be_ordered(hass: HomeAssistant) -> None:
+    """Oberer Sonnenwert unter dem unteren wird abgelehnt."""
+    result = await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_USER}
+    )
+    bad = {
+        **GLOBAL_INPUT,
+        const.CONF_SUN_LOW: 20000,
+        const.CONF_SUN_HIGH: 10000,
+    }
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], bad)
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {const.CONF_SUN_HIGH: "sun_thresholds"}
+
+
+async def test_sun_defaults_are_filled_in(hass: HomeAssistant) -> None:
+    """Ohne Angaben gelten Standardwerte; der Sensor bleibt leer (Funktion aus)."""
+    result = await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], GLOBAL_INPUT
+    )
+    data = result["data"]
+    assert data[const.CONF_SUN_MAX] == const.DEFAULT_SUN_MAX
+    assert data[const.CONF_SUN_LOW] == const.DEFAULT_SUN_LOW
+    assert data[const.CONF_SUN_HIGH] == const.DEFAULT_SUN_HIGH
+    assert data[const.CONF_SUN_DELAY] == const.DEFAULT_SUN_DELAY
+    assert const.CONF_SUN_ENTITY not in data
+
+
+async def test_zone_sun_directions_are_saved(hass: HomeAssistant) -> None:
+    """Fensterrichtung der Zone wird gespeichert."""
+    result = await hass.config_entries.flow.async_init(
+        const.DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], GLOBAL_INPUT
+    )
+    entry = result["result"]
+    hass.states.async_set("climate.trv", "heat")
+    flow = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, const.SUBENTRY_ZONE), context={"source": SOURCE_USER}
+    )
+    done = await hass.config_entries.subentries.async_configure(
+        flow["flow_id"],
+        {
+            "name": "Wohnzimmer",
+            const.CONF_THERMOSTATS: ["climate.trv"],
+            const.CONF_COMFORT_OFFSET: 0,
+            const.CONF_ECO_OFFSET: -3,
+            const.CONF_ECO_RELATIVE: False,
+            const.CONF_SUN_DIRECTIONS: ["se"],
+        },
+    )
+    assert done["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    sub = next(iter(entry.subentries.values()))
+    assert sub.data[const.CONF_SUN_DIRECTIONS] == ["se"]

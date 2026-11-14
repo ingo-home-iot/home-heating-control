@@ -59,6 +59,7 @@ class ZoneInputs:
     eco: bool = False
     outdoor_temp: float | None = None
     frost_threshold: float = 5.0
+    sun_reduction: float = 0.0  # °C, die Sonne im Fenster senkt die Komforttemperatur
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +67,7 @@ class Decision:
     """Ergebnis: Modus, Zieltemperatur (nur bei heat und bekannter Basis) und Grund."""
 
     mode: HvacTarget
-    temperature: int | None
+    temperature: float | None
     reason: Reason
 
 
@@ -150,6 +151,13 @@ def decide(inputs: ZoneInputs) -> Decision:
             reason = Reason.PREHEAT
         else:
             reason = Reason.COMFORT_FORCED
+        # Sonne senkt nur den Komfortwert; Vorheizen soll den Raum warm bekommen
+        if (
+            temperature is not None
+            and inputs.sun_reduction > 0
+            and reason is not Reason.PREHEAT
+        ):
+            temperature = temperature - inputs.sun_reduction
     else:
         temperature = eco_temperature(inputs)
         if inputs.eco:
@@ -164,3 +172,44 @@ def decide(inputs: ZoneInputs) -> Decision:
             reason = Reason.SCHEDULE_OFF_ECO
 
     return Decision(HvacTarget.HEAT, temperature, reason)
+
+
+def sun_reduction(
+    lux: float | None,
+    low: float,
+    high: float,
+    max_reduction: float,
+    step: float,
+) -> float:
+    """Absenkung in °C für die gemessene Helligkeit.
+
+    Unter `low` keine, zwischen `low` und `high` die halbe, ab `high` die volle Absenkung.
+    Jede Stufe wird auf ganze Schritte der Thermostat-Auflösung abgerundet; bei einer
+    Höchstabsenkung von 0,5 und Schritt 0,5 bleibt es also bei "aus" oder "voll".
+    """
+    if lux is None or max_reduction <= 0:
+        return 0.0
+    if lux >= high:
+        share = 1.0
+    elif lux >= low:
+        share = 0.5
+    else:
+        return 0.0
+    return float(int(max_reduction * share / step + 1e-9)) * step
+
+
+def sun_in_window(
+    azimuth: float | None,
+    elevation: float | None,
+    directions: list[float],
+    min_elevation: float,
+    max_angle: float,
+) -> bool:
+    """Scheint die Sonne auf mindestens eines der Fenster (Richtungen als Azimut in Grad)?"""
+    if azimuth is None or elevation is None or elevation < min_elevation:
+        return False
+    for facing in directions:
+        diff = abs((azimuth - facing + 180.0) % 360.0 - 180.0)
+        if diff <= max_angle:
+            return True
+    return False
