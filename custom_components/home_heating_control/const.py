@@ -20,6 +20,11 @@ CONF_VACATION_LEAD = "vacation_lead_hours"
 CONF_WINDOW_ALERT = "window_open_alert"
 CONF_PREHEAT_MIN_PER_K = "preheat_minutes_per_kelvin"
 CONF_PREHEAT_MAX = "preheat_max_minutes"
+CONF_SUN_ENTITY = "sun_entity"
+CONF_SUN_LOW = "sun_threshold_low"
+CONF_SUN_HIGH = "sun_threshold_high"
+CONF_SUN_MAX = "sun_max_reduction"
+CONF_SUN_DELAY = "sun_delay_minutes"
 
 # Zonen (Subentry)
 SUBENTRY_ZONE = "zone"
@@ -31,8 +36,21 @@ CONF_ECO_RELATIVE = "eco_relative"
 CONF_FOLLOW_BED = "follow_bed"
 CONF_PREHEAT = "preheat"
 CONF_ROOM_SENSOR = "room_temp_entity"
+CONF_SUN_DIRECTIONS = "sun_directions"
 CONF_AREA_ID = "area_id"
 CONF_AREAS = "areas"
+
+# Himmelsrichtung der Fenster -> Azimut in Grad (Norden = 0, Osten = 90)
+SUN_DIRECTIONS: dict[str, int] = {
+    "N": 0,
+    "NE": 45,
+    "E": 90,
+    "SE": 135,
+    "S": 180,
+    "SW": 225,
+    "W": 270,
+    "NW": 315,
+}
 
 DEFAULT_ECO_OFFSET = -3
 
@@ -66,6 +84,16 @@ PREHEAT_CHECK_INTERVAL = 5  # Minuten zwischen zwei Prüfungen
 DEFAULT_DISABLED_MIN_TEMP = 5  # °C; 0 = ausgeschaltete Zonen bleiben bei Frost aus
 DEFAULT_PARTY_HOURS = 4  # Stunden; 0 = Party endet nicht von selbst
 DEFAULT_PARTY_TEMP = 0  # °C; 0 = Party heizt auf die Komforttemperatur der Zone
+DEFAULT_SUN_LOW = 15000  # lx; ab hier gilt "Sonne scheint" (halbe Absenkung)
+DEFAULT_SUN_HIGH = 25000  # lx; ab hier gilt "Sonne scheint kräftig" (volle Absenkung)
+DEFAULT_SUN_MAX = 0.5  # °C; größte Absenkung bei Sonne
+DEFAULT_SUN_DELAY = 10  # Minuten, die eine neue Sonnenstufe anhalten muss
+SUN_STEP = 0.5  # °C; kleinste Schrittweite der Absenkung (Thermostat-Auflösung)
+SUN_MIN_ELEVATION = (
+    3.0  # Grad über dem Horizont, darunter scheint keine Sonne ins Fenster
+)
+SUN_WINDOW_ANGLE = 60.0  # Grad; so weit darf die Sonne seitlich vom Fenster stehen
+SUN_CHECK_INTERVAL = 5  # Minuten zwischen zwei Prüfungen des Sonnenstands
 
 # Wartezeit zwischen Moduswechsel und Temperaturbefehl (Thermostat kommt zur Ruhe)
 SETTLE_DELAY = 3.0

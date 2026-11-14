@@ -81,6 +81,7 @@ class ZoneDecisionSensor(HeatingEntity, SensorEntity):
             "decision_reason": None if decision is None else decision.reason.value,
             "preheat": zone.preheat_event is not None,
             "vacation": self.controller.vacation_phase(),
+            "sun_reduction": zone.sun_reduction,
             "manual_override_until": None
             if zone.manual_until is None
             else zone.manual_until.isoformat(),

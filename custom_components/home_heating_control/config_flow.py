@@ -41,6 +41,12 @@ from .const import (
     CONF_REACTION_TIME,
     CONF_ROOM_SENSOR,
     CONF_SCHEDULE,
+    CONF_SUN_DELAY,
+    CONF_SUN_DIRECTIONS,
+    CONF_SUN_ENTITY,
+    CONF_SUN_HIGH,
+    CONF_SUN_LOW,
+    CONF_SUN_MAX,
     CONF_THERMOSTATS,
     CONF_VACATION_LEAD,
     CONF_WINDOW,
@@ -52,10 +58,15 @@ from .const import (
     DEFAULT_PREHEAT_MAX,
     DEFAULT_PREHEAT_MIN_PER_K,
     DEFAULT_REACTION_TIME,
+    DEFAULT_SUN_DELAY,
+    DEFAULT_SUN_HIGH,
+    DEFAULT_SUN_LOW,
+    DEFAULT_SUN_MAX,
     DEFAULT_VACATION_LEAD,
     DEFAULT_WINDOW_ALERT,
     DOMAIN,
     SUBENTRY_ZONE,
+    SUN_DIRECTIONS,
 )
 from .discovery import AreaCandidate, discover_areas
 
@@ -72,12 +83,34 @@ def _offset_selector() -> selector.NumberSelector:
     )
 
 
+def _lux_selector() -> selector.NumberSelector:
+    return selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=0,
+            max=150000,
+            step=500,
+            mode=selector.NumberSelectorMode.BOX,
+            unit_of_measurement="lx",
+        )
+    )
+
+
 def _notify_error(hass: HomeAssistant, user_input: dict[str, Any]) -> dict[str, str]:
     """Fehler für das Feld notify-Dienst, wenn der Dienst nicht existiert."""
     name = str(user_input.get(CONF_NOTIFY) or "").strip().removeprefix("notify.")
     if name and not hass.services.has_service("notify", name):
         return {CONF_NOTIFY: "notify_not_found"}
     return {}
+
+
+def _global_errors(hass: HomeAssistant, user_input: dict[str, Any]) -> dict[str, str]:
+    """Fehler der allgemeinen Einstellungen (notify-Dienst, Sonnen-Schwellen)."""
+    errors = _notify_error(hass, user_input)
+    if float(user_input.get(CONF_SUN_HIGH, DEFAULT_SUN_HIGH)) < float(
+        user_input.get(CONF_SUN_LOW, DEFAULT_SUN_LOW)
+    ):
+        errors[CONF_SUN_HIGH] = "sun_thresholds"
+    return errors
 
 
 def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
@@ -214,6 +247,42 @@ def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
                     unit_of_measurement="min",
                 )
             ),
+            vol.Optional(
+                CONF_SUN_ENTITY,
+                description={"suggested_value": defaults.get(CONF_SUN_ENTITY)},
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    domain="sensor", device_class="illuminance"
+                )
+            ),
+            vol.Required(
+                CONF_SUN_LOW, default=defaults.get(CONF_SUN_LOW, DEFAULT_SUN_LOW)
+            ): _lux_selector(),
+            vol.Required(
+                CONF_SUN_HIGH, default=defaults.get(CONF_SUN_HIGH, DEFAULT_SUN_HIGH)
+            ): _lux_selector(),
+            vol.Required(
+                CONF_SUN_MAX, default=defaults.get(CONF_SUN_MAX, DEFAULT_SUN_MAX)
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=2,
+                    step=0.5,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="°C",
+                )
+            ),
+            vol.Required(
+                CONF_SUN_DELAY, default=defaults.get(CONF_SUN_DELAY, DEFAULT_SUN_DELAY)
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=120,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="min",
+                )
+            ),
         }
     )
 
@@ -243,7 +312,7 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
         errors: dict[str, str] = {}
         if user_input is not None:
-            errors = _notify_error(self.hass, user_input)
+            errors = _global_errors(self.hass, user_input)
         if user_input is not None and not errors:
             self._global = user_input
             self._candidates = {c.area_id: c for c in discover_areas(self.hass, set())}
@@ -308,7 +377,7 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
         entry = self._get_reconfigure_entry()
         errors: dict[str, str] = {}
         if user_input is not None:
-            errors = _notify_error(self.hass, user_input)
+            errors = _global_errors(self.hass, user_input)
         if user_input is not None and not errors:
             known = {sub.data.get(CONF_AREA_ID) for sub in entry.subentries.values()}
             used = {
@@ -320,7 +389,7 @@ class HomeHeatingControlConfigFlow(ConfigFlow, domain=DOMAIN):
             self._global = {
                 key: value
                 for key, value in entry.data.items()
-                if key not in (CONF_BED, CONF_NOTIFY)
+                if key not in (CONF_BED, CONF_NOTIFY, CONF_SUN_ENTITY)
             } | user_input
             # Räume überspringen, die schon eine Zone haben (auch von Hand angelegte)
             self._candidates = {
@@ -405,6 +474,16 @@ def _zone_schema(defaults: dict[str, Any]) -> vol.Schema:
             vol.Required(
                 CONF_PREHEAT, default=defaults.get(CONF_PREHEAT, False)
             ): selector.BooleanSelector(),
+            vol.Optional(
+                CONF_SUN_DIRECTIONS, default=defaults.get(CONF_SUN_DIRECTIONS, [])
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(SUN_DIRECTIONS),
+                    multiple=True,
+                    mode=selector.SelectSelectorMode.LIST,
+                    translation_key="sun_direction",
+                )
+            ),
         }
     )
 

@@ -36,6 +36,8 @@ from .engine import (
     decide,
     eco_temperature,
     frost,
+    sun_in_window,
+    sun_reduction,
 )
 
 if TYPE_CHECKING:
@@ -55,12 +57,14 @@ class Zone:
     follow_bed: bool
     preheat: bool
     room_sensor: str | None
+    sun_azimuths: list[float]
     comfort_offset: float
     eco_offset: float
     eco_relative: bool
     eco: bool = False
     enabled: bool = True
     window_open: bool = False
+    sun_reduction: float = 0.0
     decision: Decision | None = None
     comfort_temp: int | None = None
     eco_temp: int | None = None
@@ -130,6 +134,23 @@ class HeatingController:
         self._vacation_lead: float = float(
             data.get(const.CONF_VACATION_LEAD, const.DEFAULT_VACATION_LEAD)
         )
+        self._sun_entity: str | None = data.get(const.CONF_SUN_ENTITY) or None
+        self._sun_low: float = float(
+            data.get(const.CONF_SUN_LOW, const.DEFAULT_SUN_LOW)
+        )
+        self._sun_high: float = float(
+            data.get(const.CONF_SUN_HIGH, const.DEFAULT_SUN_HIGH)
+        )
+        self._sun_max: float = float(
+            data.get(const.CONF_SUN_MAX, const.DEFAULT_SUN_MAX)
+        )
+        self._sun_delay: float = float(
+            data.get(const.CONF_SUN_DELAY, const.DEFAULT_SUN_DELAY)
+        )
+        self.sun_lux_level: float | None = None  # zuletzt übernommene Helligkeit
+        self.sun_stage_reduction = 0.0  # übernommene Absenkung (nach Wartezeit)
+        self._sun_pending: float | None = None
+        self._sun_timer: CALLBACK_TYPE | None = None
         self.vacation = False
         self.vacation_return: datetime | None = None
         self._vacation_unsub: CALLBACK_TYPE | None = None
@@ -156,6 +177,11 @@ class HeatingController:
                 follow_bed=bool(sub.get(const.CONF_FOLLOW_BED, False)),
                 preheat=bool(sub.get(const.CONF_PREHEAT, False)),
                 room_sensor=sub.get(const.CONF_ROOM_SENSOR) or None,
+                sun_azimuths=[
+                    float(const.SUN_DIRECTIONS[d])
+                    for d in sub.get(const.CONF_SUN_DIRECTIONS, [])
+                    if d in const.SUN_DIRECTIONS
+                ],
                 comfort_offset=float(sub.get(const.CONF_COMFORT_OFFSET, 0)),
                 eco_offset=float(sub.get(const.CONF_ECO_OFFSET, 0)),
                 eco_relative=bool(sub.get(const.CONF_ECO_RELATIVE, False)),
@@ -200,6 +226,20 @@ class HeatingController:
                     self.hass, thermostats, self._handle_thermostat_change
                 )
             )
+        if self._sun_active():
+            assert self._sun_entity is not None
+            self._unsubs.append(
+                async_track_state_change_event(
+                    self.hass, [self._sun_entity], self._handle_sun_change
+                )
+            )
+            self._unsubs.append(
+                async_track_time_interval(
+                    self.hass,
+                    self._handle_sun_tick,
+                    timedelta(minutes=const.SUN_CHECK_INTERVAL),
+                )
+            )
         if any(zone.preheat for zone in self.zones.values()):
             self._unsubs.append(
                 async_track_time_interval(
@@ -226,6 +266,7 @@ class HeatingController:
         self._cancel_party_timer()
         self._cancel_bed_timer()
         self._cancel_vacation_timer()
+        self._cancel_sun_timer()
         for zone in self.zones.values():
             if zone.window_timer:
                 zone.window_timer()
@@ -238,6 +279,7 @@ class HeatingController:
             self.vacation = False
         self._schedule_vacation()
         self.bed_occupied = self._bed_live()
+        self.sun_stage_reduction = self._sun_live()
         for zone in self.zones.values():
             zone.window_open = self._window_live(zone)
         self._frost_active = self._frost_now()
@@ -269,6 +311,89 @@ class HeatingController:
     def _handle_preheat_tick(self, _now: datetime) -> None:
         """Regelmäßig prüfen, ob das Vorheizen beginnen muss (der Zeitplan meldet das nicht)."""
         self.request_update()
+
+    # --- Sonne ------------------------------------------------------------------------------
+
+    def _sun_active(self) -> bool:
+        """Sonnen-Absenkung ist an: Helligkeits-Sensor gesetzt, Höchstwert > 0, eine Zone mit Richtung."""
+        return (
+            self._sun_entity is not None
+            and self._sun_max > 0
+            and any(zone.sun_azimuths for zone in self.zones.values())
+        )
+
+    def _sun_live(self) -> float:
+        """Absenkung, die zur aktuellen Helligkeit passt (noch ohne Wartezeit und Sonnenstand)."""
+        if not self._sun_active():
+            return 0.0
+        lux = _float_state(self.hass, self._sun_entity)
+        self.sun_lux_level = lux
+        return sun_reduction(
+            lux, self._sun_low, self._sun_high, self._sun_max, const.SUN_STEP
+        )
+
+    @callback
+    def _cancel_sun_timer(self) -> None:
+        if self._sun_timer is not None:
+            self._sun_timer()
+            self._sun_timer = None
+        self._sun_pending = None
+
+    @callback
+    def _handle_sun_change(self, _event: Event[EventStateChangedData]) -> None:
+        """Helligkeit: eine neue Stufe gilt erst, wenn sie die Wartezeit durchgehalten hat.
+
+        Die Helligkeit meldet sich oft; der Zeitgeber läuft deshalb weiter, solange die
+        neue Stufe dieselbe bleibt (sonst käme er bei laufenden Meldungen nie ans Ziel).
+        """
+        live = self._sun_live()
+        if live == self.sun_stage_reduction:
+            self._cancel_sun_timer()
+            return
+        if self._sun_delay <= 0:
+            self._cancel_sun_timer()
+            self.sun_stage_reduction = live
+            self.request_update()
+            return
+        if self._sun_timer is not None and self._sun_pending == live:
+            return
+        self._cancel_sun_timer()
+        self._sun_pending = live
+
+        @callback
+        def _commit(_now: Any) -> None:
+            self._sun_timer = None
+            self._sun_pending = None
+            self.sun_stage_reduction = self._sun_live()
+            self.request_update()
+
+        self._sun_timer = async_call_later(self.hass, self._sun_delay * 60, _commit)
+
+    @callback
+    def _handle_sun_tick(self, _now: datetime) -> None:
+        """Sonnenstand wandert: regelmäßig prüfen, ob sich etwas für eine Zone ändert."""
+        if self._started and any(
+            self._zone_sun_reduction(zone) != zone.sun_reduction
+            for zone in self.zones.values()
+        ):
+            self.request_update()
+
+    def _zone_sun_reduction(self, zone: Zone) -> float:
+        """Absenkung für diese Zone: Stufe der Helligkeit, wenn die Sonne in ihr Fenster scheint."""
+        if self.sun_stage_reduction <= 0 or not zone.sun_azimuths:
+            return 0.0
+        sun = self.hass.states.get("sun.sun")
+        if sun is None:
+            return 0.0
+        if not sun_in_window(
+            _float_attr(sun.attributes.get("azimuth")),
+            _float_attr(sun.attributes.get("elevation")),
+            zone.sun_azimuths,
+            const.SUN_MIN_ELEVATION,
+            const.SUN_WINDOW_ANGLE,
+        ):
+            return 0.0
+        return self.sun_stage_reduction
 
     @callback
     def _handle_thermostat_change(self, event: Event[EventStateChangedData]) -> None:
@@ -740,6 +865,7 @@ class HeatingController:
             eco=self.flags[const.FLAG_ECO] or zone.eco,
             outdoor_temp=_float_state(self.hass, self._outdoor_entity),
             frost_threshold=self._frost_threshold,
+            sun_reduction=self._zone_sun_reduction(zone),
         )
         if zone.preheat and self._preheat_due(zone, inputs, schedule):
             inputs = replace(inputs, preheat=True)
@@ -827,6 +953,7 @@ class HeatingController:
         for zone in self.zones.values():
             inputs = self._inputs(zone, persons_home)
             zone.decision = decide(inputs)
+            zone.sun_reduction = inputs.sun_reduction
             if (
                 zone.manual_until is not None
                 and zone.decision.reason is not zone.manual_reason

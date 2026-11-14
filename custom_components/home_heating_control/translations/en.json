@@ -19,7 +19,12 @@
           "notify_service": "Send notifications to",
           "window_open_alert": "Notify: window open after",
           "manual_override_minutes": "Respect manual changes for",
-          "vacation_lead_hours": "Vacation: lead time before return"
+          "vacation_lead_hours": "Vacation: lead time before return",
+          "sun_entity": "Sun: brightness sensor",
+          "sun_threshold_low": "Sun: half reduction from",
+          "sun_threshold_high": "Sun: full reduction from",
+          "sun_max_reduction": "Sun: maximum reduction",
+          "sun_delay_minutes": "Sun: delay"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -36,7 +41,12 @@
           "notify_service": "Optional. Name of the notify service, e.g. notify.mobile_app_my_phone. Reported: thermostat unreachable for over 30 minutes, thermostat rejects a command, window open too long.",
           "window_open_alert": "Minutes after which an open window is reported. 0 = never.",
           "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before.",
-          "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule)."
+          "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule).",
+          "sun_entity": "Optional. Outdoor brightness in lux (e.g. from a weather station). Empty = no sun reduction. Only applies to zones with a window direction and only at comfort.",
+          "sun_threshold_low": "From this brightness (lux) the sun counts as shining. Half the maximum reduction applies (rounded down to 0.5 °C).",
+          "sun_threshold_high": "From this brightness (lux) the sun counts as strong. The full maximum reduction applies. Must be at least the lower value.",
+          "sun_max_reduction": "How much the comfort setpoint is lowered in strong sun (0 = off). The thermostat receives values in 0.5 °C steps.",
+          "sun_delay_minutes": "Minutes a new sun level must hold before it applies (avoids flip-flopping with passing clouds)."
         }
       },
       "reconfigure": {
@@ -56,7 +66,12 @@
           "notify_service": "Send notifications to",
           "window_open_alert": "Notify: window open after",
           "manual_override_minutes": "Respect manual changes for",
-          "vacation_lead_hours": "Vacation: lead time before return"
+          "vacation_lead_hours": "Vacation: lead time before return",
+          "sun_entity": "Sun: brightness sensor",
+          "sun_threshold_low": "Sun: half reduction from",
+          "sun_threshold_high": "Sun: full reduction from",
+          "sun_max_reduction": "Sun: maximum reduction",
+          "sun_delay_minutes": "Sun: delay"
         },
         "data_description": {
           "base_temp_entity": "Sensor or number with the target room temperature, e.g. from a heating curve. Room offsets are added to it.",
@@ -73,7 +88,12 @@
           "notify_service": "Optional. Name of the notify service, e.g. notify.mobile_app_my_phone. Reported: thermostat unreachable for over 30 minutes, thermostat rejects a command, window open too long.",
           "window_open_alert": "Minutes after which an open window is reported. 0 = never.",
           "manual_override_minutes": "Optional. If the setpoint is changed on the thermostat itself, the controller leaves it alone for this long (minutes) or until the zone changes state (e.g. schedule change). 0 = off, the controller resets the value as before.",
-          "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule)."
+          "vacation_lead_hours": "Hours before the return time from which heating returns to normal (comfort per schedule).",
+          "sun_entity": "Optional. Outdoor brightness in lux (e.g. from a weather station). Empty = no sun reduction. Only applies to zones with a window direction and only at comfort.",
+          "sun_threshold_low": "From this brightness (lux) the sun counts as shining. Half the maximum reduction applies (rounded down to 0.5 °C).",
+          "sun_threshold_high": "From this brightness (lux) the sun counts as strong. The full maximum reduction applies. Must be at least the lower value.",
+          "sun_max_reduction": "How much the comfort setpoint is lowered in strong sun (0 = off). The thermostat receives values in 0.5 °C steps.",
+          "sun_delay_minutes": "Minutes a new sun level must hold before it applies (avoids flip-flopping with passing clouds)."
         }
       },
       "areas": {
@@ -89,7 +109,8 @@
       "reconfigure_successful": "Settings saved."
     },
     "error": {
-      "notify_not_found": "This notify service does not exist. Find the name under Developer tools → Actions, e.g. notify.mobile_app_my_phone."
+      "notify_not_found": "This notify service does not exist. Find the name under Developer tools → Actions, e.g. notify.mobile_app_my_phone.",
+      "sun_thresholds": "The upper value must be at least as high as the lower one."
     }
   },
   "config_subentries": {
@@ -108,7 +129,8 @@
             "eco_relative": "ECO offset in addition to comfort offset",
             "follow_bed": "Follows bed",
             "preheat": "Preheat",
-            "room_temp_entity": "Room temperature sensor"
+            "room_temp_entity": "Room temperature sensor",
+            "sun_directions": "Window direction (sun)"
           },
           "data_description": {
             "window_entity": "Optional. Window open = thermostats off.",
@@ -117,7 +139,8 @@
             "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added.",
             "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence.",
             "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home).",
-            "room_temp_entity": "Optional. Extra sensor in the room. Used for preheating instead of the thermostat reading and shown as a comparison value in the decision sensor. It does not control the heating."
+            "room_temp_entity": "Optional. Extra sensor in the room. Used for preheating instead of the thermostat reading and shown as a comparison value in the decision sensor. It does not control the heating.",
+            "sun_directions": "Optional. Compass direction of the windows. Only zones with a direction get the sun reduction. Empty = off."
           }
         },
         "reconfigure": {
@@ -131,7 +154,8 @@
             "eco_relative": "ECO offset in addition to comfort offset",
             "follow_bed": "Follows bed",
             "preheat": "Preheat",
-            "room_temp_entity": "Room temperature sensor"
+            "room_temp_entity": "Room temperature sensor",
+            "sun_directions": "Window direction (sun)"
           },
           "data_description": {
             "window_entity": "Optional. Window open = thermostats off.",
@@ -140,7 +164,8 @@
             "eco_relative": "Off: the ECO offset applies directly to the base. On: comfort and ECO offsets are added.",
             "follow_bed": "When everyone is in bed, the schedule is interrupted and ECO is used. Party and “Comfort always” take precedence.",
             "preheat": "Heats to comfort before the schedule starts if the room would otherwise not be warm in time (only when someone is home).",
-            "room_temp_entity": "Optional. Extra sensor in the room. Used for preheating instead of the thermostat reading and shown as a comparison value in the decision sensor. It does not control the heating."
+            "room_temp_entity": "Optional. Extra sensor in the room. Used for preheating instead of the thermostat reading and shown as a comparison value in the decision sensor. It does not control the heating.",
+            "sun_directions": "Optional. Compass direction of the windows. Only zones with a direction get the sun reduction. Empty = off."
           }
         }
       },
@@ -229,6 +254,20 @@
     "datetime": {
       "vacation_return": {
         "name": "Return"
+      }
+    }
+  },
+  "selector": {
+    "sun_direction": {
+      "options": {
+        "N": "North",
+        "NE": "Northeast",
+        "E": "East",
+        "SE": "Southeast",
+        "S": "South",
+        "SW": "Southwest",
+        "W": "West",
+        "NW": "Northwest"
       }
     }
   }

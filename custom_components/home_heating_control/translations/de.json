@@ -19,7 +19,12 @@
           "notify_service": "Meldungen senden an",
           "window_open_alert": "Meldung: Fenster offen nach",
           "manual_override_minutes": "Handverstellung respektieren für",
-          "vacation_lead_hours": "Urlaub: Vorlauf vor Rückkehr"
+          "vacation_lead_hours": "Urlaub: Vorlauf vor Rückkehr",
+          "sun_entity": "Sonne: Helligkeits-Sensor",
+          "sun_threshold_low": "Sonne: ab hier halbe Absenkung",
+          "sun_threshold_high": "Sonne: ab hier volle Absenkung",
+          "sun_max_reduction": "Sonne: größte Absenkung",
+          "sun_delay_minutes": "Sonne: Wartezeit"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -36,7 +41,12 @@
           "notify_service": "Optional. Name des notify-Dienstes, z. B. notify.mobile_app_mein_handy. Gemeldet werden: Thermostat über 30 Minuten nicht erreichbar, Thermostat lehnt einen Befehl ab, Fenster zu lange offen.",
           "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie.",
           "manual_override_minutes": "Optional. Wird die Solltemperatur direkt am Thermostat verstellt, lässt die Steuerung den Wert so lange stehen (Minuten) oder bis die Zone ihren Zustand wechselt (z. B. Zeitplanwechsel). 0 = aus, die Steuerung setzt den Wert wie bisher zurück.",
-          "vacation_lead_hours": "Stunden vor dem Rückkehr-Zeitpunkt, ab denen wieder normal (mit Komfort laut Zeitplan) geheizt wird."
+          "vacation_lead_hours": "Stunden vor dem Rückkehr-Zeitpunkt, ab denen wieder normal (mit Komfort laut Zeitplan) geheizt wird.",
+          "sun_entity": "Optional. Außenhelligkeit in Lux (z. B. von der Wetterstation). Leer = keine Sonnen-Absenkung. Wirkt nur in Zonen mit Fensterrichtung und nur bei Komfort.",
+          "sun_threshold_low": "Ab dieser Helligkeit (Lux) scheint die Sonne. Es wird die halbe größte Absenkung angewendet (auf 0,5 °C abgerundet).",
+          "sun_threshold_high": "Ab dieser Helligkeit (Lux) scheint die Sonne kräftig. Es gilt die volle größte Absenkung. Muss mindestens so hoch sein wie der untere Wert.",
+          "sun_max_reduction": "So viel wird die Komfort-Solltemperatur bei kräftiger Sonne gesenkt (0 = aus). Das Thermostat bekommt Werte in 0,5-°C-Schritten.",
+          "sun_delay_minutes": "Minuten, die eine neue Sonnenstufe anhalten muss, bevor sie gilt (verhindert Hin und Her bei vorbeiziehenden Wolken)."
         }
       },
       "reconfigure": {
@@ -56,7 +66,12 @@
           "notify_service": "Meldungen senden an",
           "window_open_alert": "Meldung: Fenster offen nach",
           "manual_override_minutes": "Handverstellung respektieren für",
-          "vacation_lead_hours": "Urlaub: Vorlauf vor Rückkehr"
+          "vacation_lead_hours": "Urlaub: Vorlauf vor Rückkehr",
+          "sun_entity": "Sonne: Helligkeits-Sensor",
+          "sun_threshold_low": "Sonne: ab hier halbe Absenkung",
+          "sun_threshold_high": "Sonne: ab hier volle Absenkung",
+          "sun_max_reduction": "Sonne: größte Absenkung",
+          "sun_delay_minutes": "Sonne: Wartezeit"
         },
         "data_description": {
           "base_temp_entity": "Sensor oder Zahl mit der Ziel-Raumtemperatur, z. B. aus der Heizkurve. Raum-Abweichungen werden darauf gerechnet.",
@@ -73,7 +88,12 @@
           "notify_service": "Optional. Name des notify-Dienstes, z. B. notify.mobile_app_mein_handy. Gemeldet werden: Thermostat über 30 Minuten nicht erreichbar, Thermostat lehnt einen Befehl ab, Fenster zu lange offen.",
           "window_open_alert": "Minuten, nach denen ein offenes Fenster gemeldet wird. 0 = nie.",
           "manual_override_minutes": "Optional. Wird die Solltemperatur direkt am Thermostat verstellt, lässt die Steuerung den Wert so lange stehen (Minuten) oder bis die Zone ihren Zustand wechselt (z. B. Zeitplanwechsel). 0 = aus, die Steuerung setzt den Wert wie bisher zurück.",
-          "vacation_lead_hours": "Stunden vor dem Rückkehr-Zeitpunkt, ab denen wieder normal (mit Komfort laut Zeitplan) geheizt wird."
+          "vacation_lead_hours": "Stunden vor dem Rückkehr-Zeitpunkt, ab denen wieder normal (mit Komfort laut Zeitplan) geheizt wird.",
+          "sun_entity": "Optional. Außenhelligkeit in Lux (z. B. von der Wetterstation). Leer = keine Sonnen-Absenkung. Wirkt nur in Zonen mit Fensterrichtung und nur bei Komfort.",
+          "sun_threshold_low": "Ab dieser Helligkeit (Lux) scheint die Sonne. Es wird die halbe größte Absenkung angewendet (auf 0,5 °C abgerundet).",
+          "sun_threshold_high": "Ab dieser Helligkeit (Lux) scheint die Sonne kräftig. Es gilt die volle größte Absenkung. Muss mindestens so hoch sein wie der untere Wert.",
+          "sun_max_reduction": "So viel wird die Komfort-Solltemperatur bei kräftiger Sonne gesenkt (0 = aus). Das Thermostat bekommt Werte in 0,5-°C-Schritten.",
+          "sun_delay_minutes": "Minuten, die eine neue Sonnenstufe anhalten muss, bevor sie gilt (verhindert Hin und Her bei vorbeiziehenden Wolken)."
         }
       },
       "areas": {
@@ -89,7 +109,8 @@
       "reconfigure_successful": "Einstellungen gespeichert."
     },
     "error": {
-      "notify_not_found": "Diesen notify-Dienst gibt es nicht. Der Name steht unter Entwicklerwerkzeuge → Aktionen, z. B. notify.mobile_app_mein_handy."
+      "notify_not_found": "Diesen notify-Dienst gibt es nicht. Der Name steht unter Entwicklerwerkzeuge → Aktionen, z. B. notify.mobile_app_mein_handy.",
+      "sun_thresholds": "Der obere Wert muss mindestens so hoch sein wie der untere."
     }
   },
   "config_subentries": {
@@ -108,7 +129,8 @@
             "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung",
             "follow_bed": "Folgt dem Bett",
             "preheat": "Vorheizen",
-            "room_temp_entity": "Raumtemperatur-Sensor"
+            "room_temp_entity": "Raumtemperatur-Sensor",
+            "sun_directions": "Fensterrichtung (Sonne)"
           },
           "data_description": {
             "window_entity": "Optional. Fenster offen = Thermostate aus.",
@@ -117,7 +139,8 @@
             "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert.",
             "follow_bed": "Liegen alle im Bett, wird der Zeitplan unterbrochen und ECO geheizt. Partys und „Komfort dauerhaft“ haben Vorrang.",
             "preheat": "Heizt vor dem Zeitplanstart schon auf Komfort, wenn der Raum sonst nicht rechtzeitig warm wird (nur wenn jemand zu Hause ist).",
-            "room_temp_entity": "Optional. Zusätzlicher Fühler im Raum. Wird beim Vorheizen statt der Thermostat-Messung genommen und als Vergleichswert im Entscheidungssensor gezeigt. Geregelt wird nicht danach."
+            "room_temp_entity": "Optional. Zusätzlicher Fühler im Raum. Wird beim Vorheizen statt der Thermostat-Messung genommen und als Vergleichswert im Entscheidungssensor gezeigt. Geregelt wird nicht danach.",
+            "sun_directions": "Optional. Himmelsrichtung der Fenster. Nur in Zonen mit Richtung senkt die Sonne den Sollwert. Leer = aus."
           }
         },
         "reconfigure": {
@@ -131,7 +154,8 @@
             "eco_relative": "ECO-Abweichung zusätzlich zur Komfort-Abweichung",
             "follow_bed": "Folgt dem Bett",
             "preheat": "Vorheizen",
-            "room_temp_entity": "Raumtemperatur-Sensor"
+            "room_temp_entity": "Raumtemperatur-Sensor",
+            "sun_directions": "Fensterrichtung (Sonne)"
           },
           "data_description": {
             "window_entity": "Optional. Fenster offen = Thermostate aus.",
@@ -140,7 +164,8 @@
             "eco_relative": "Aus: ECO-Abweichung gilt direkt auf die Basis. An: Komfort- und ECO-Abweichung werden addiert.",
             "follow_bed": "Liegen alle im Bett, wird der Zeitplan unterbrochen und ECO geheizt. Partys und „Komfort dauerhaft“ haben Vorrang.",
             "preheat": "Heizt vor dem Zeitplanstart schon auf Komfort, wenn der Raum sonst nicht rechtzeitig warm wird (nur wenn jemand zu Hause ist).",
-            "room_temp_entity": "Optional. Zusätzlicher Fühler im Raum. Wird beim Vorheizen statt der Thermostat-Messung genommen und als Vergleichswert im Entscheidungssensor gezeigt. Geregelt wird nicht danach."
+            "room_temp_entity": "Optional. Zusätzlicher Fühler im Raum. Wird beim Vorheizen statt der Thermostat-Messung genommen und als Vergleichswert im Entscheidungssensor gezeigt. Geregelt wird nicht danach.",
+            "sun_directions": "Optional. Himmelsrichtung der Fenster. Nur in Zonen mit Richtung senkt die Sonne den Sollwert. Leer = aus."
           }
         }
       },
@@ -229,6 +254,20 @@
     "datetime": {
       "vacation_return": {
         "name": "Rückkehr"
+      }
+    }
+  },
+  "selector": {
+    "sun_direction": {
+      "options": {
+        "N": "Nord",
+        "NE": "Nordost",
+        "E": "Ost",
+        "SE": "Südost",
+        "S": "Süd",
+        "SW": "Südwest",
+        "W": "West",
+        "NW": "Nordwest"
       }
     }
   }
