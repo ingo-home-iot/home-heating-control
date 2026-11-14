@@ -84,7 +84,7 @@ Reihenfolge, die erste zutreffende Regel gilt:
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
-## Sonnen-Absenkung (optional, ab 0.4.0)
+## Sonnen-Absenkung (optional, ab 0.4.1)
 
 Scheint die Sonne durchs Fenster, wärmt sie den Raum ohne Heizung; das Thermostat am
 Heizkörper merkt das oft spät. Die Steuerung senkt deshalb die **Komfort**-Solltemperatur

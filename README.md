@@ -52,7 +52,7 @@ In den allgemeinen Einstellungen kannst du einen **Bett-Sensor** (`binary_sensor
 
 Je Zone schaltest du **„Vorheizen"** ein (Standard: aus). Dann beginnt die Zone schon vor dem nächsten Zeitplanstart, auf Komfort zu heizen, damit der Raum rechtzeitig warm ist. In den allgemeinen Einstellungen legst du fest, wie viele **Minuten ein Grad** Erwärmung etwa dauert (Standard 20) und die **Höchstzeit** (Standard 90 Minuten). Beispiel: Raum 18 °C, Komfort 20 °C, 20 min/Grad → Start 40 Minuten vor dem Zeitplanstart. Der Grund steht dann als `preheat` im Entscheidungssensor. Ohne Schalter ändert sich nichts.
 
-### Sonnen-Absenkung (optional, ab 0.4.0)
+### Sonnen-Absenkung (optional, ab 0.4.1)
 
 Scheint die Sonne durchs Fenster, senkt die Steuerung die **Komfort**-Solltemperatur der Zone leicht ab. In den allgemeinen Einstellungen wählst du den **Helligkeits-Sensor** (Lux, z. B. deine Wetterstation), die beiden **Schwellwerte** (Standard 15 000 und 25 000 lx), die **größte Absenkung** (Standard 0,5 °C) und die **Wartezeit** (Standard 10 Minuten, gegen vorbeiziehende Wolken). In den Zoneneinstellungen gibst du die **Fensterrichtung** an (z. B. Südost); Zonen ohne Richtung bleiben unverändert. Die Sonne muss dafür auch wirklich in dieses Fenster scheinen (Sonnenstand aus `sun.sun`). Nur bei Komfort, nicht bei ECO, Vorheizen, Fenster offen oder Party mit eigener Temperatur. Im Entscheidungssensor steht die aktuelle Absenkung als `sun_reduction`. Ohne Helligkeits-Sensor ändert sich nichts. Details in [docs/VERHALTEN.md](docs/VERHALTEN.md).
 
