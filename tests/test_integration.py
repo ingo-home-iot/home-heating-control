@@ -905,8 +905,9 @@ async def test_room_sensor_unavailable_falls_back_to_thermostat(
 LUX = "sensor.wetterstation_lux"
 SUN_GLOBAL = {
     const.CONF_SUN_ENTITY: LUX,
-    const.CONF_SUN_LOW: 15000,
-    const.CONF_SUN_HIGH: 25000,
+    const.CONF_SUN_REFERENCE: 85000,
+    const.CONF_SUN_LOW: 50,
+    const.CONF_SUN_HIGH: 75,
     const.CONF_SUN_MAX: 0.5,
     const.CONF_SUN_DELAY: 10,
 }
@@ -1074,4 +1075,86 @@ async def test_sun_zero_delay_applies_immediately(hass: HomeAssistant) -> None:
     )
     _set_sun(hass, 30000)
     await hass.async_block_till_done()
+    assert temps[-1].data["temperature"] == 19.5
+
+
+async def test_sun_winter_morning_clear_sky_counts_as_sun(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Klarer Himmel bei tiefer Wintersonne (21 500 lx bei 15°) senkt ab.
+
+    Mit festen Lux-Schwellen (25 000) wäre das nicht passiert.
+    """
+    _, temps = await _sun_world(hass)
+    _set_sun(hass, 21500)
+    await _tick(hass, freezer, 11)
+    assert temps[-1].data["temperature"] == 19.5
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert 90 <= sensor.attributes["sun_share"] <= 100
+
+
+async def test_sun_overcast_sky_does_not_lower(hass: HomeAssistant, freezer) -> None:
+    """Bedeckt (6 000 lx bei 15°, etwa 27 %): keine Absenkung."""
+    _, temps = await _sun_world(hass)
+    _set_sun(hass, 6000)
+    await _tick(hass, freezer, 15)
+    assert not temps
+    sensor = hass.states.get("sensor.bad_decision")
+    assert sensor is not None
+    assert 20 <= sensor.attributes["sun_share"] <= 35
+
+
+async def test_sun_half_stage_with_one_degree_maximum(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Höchstabsenkung 1,0: dünne Wolken (etwa 60 %) senken um 0,5."""
+    _, temps = await _sun_world(
+        hass, global_extra={**SUN_GLOBAL, const.CONF_SUN_MAX: 1.0}
+    )
+    _set_sun(hass, 13000)
+    await _tick(hass, freezer, 11)
+    assert temps[-1].data["temperature"] == 19.5
+
+
+async def test_sun_same_light_is_less_at_higher_sun(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Dieselben 21 500 lx bei hoher Sonne (35°) sind nur etwa 44 %: keine Absenkung."""
+    _, temps = await _sun_world(hass, elevation=35.0)
+    _set_sun(hass, 21500, elevation=35.0)
+    await _tick(hass, freezer, 15)
+    assert not temps
+
+
+async def test_sun_share_follows_elevation_without_new_reading(
+    hass: HomeAssistant, freezer
+) -> None:
+    """Helligkeit bleibt gleich, die Sonne sinkt: der Anteil steigt, die Prüfung bemerkt es."""
+    _, temps = await _sun_world(hass, elevation=40.0)
+    _set_sun(hass, 30000, elevation=40.0)  # 30000 / (85000 * sin 40°) = 55 %
+    await _tick(hass, freezer, 15)
+    assert not temps  # halbe Stufe, bei 0,5 °C Höchstwert auf 0 abgerundet
+    hass.states.async_set(
+        "sun.sun", "above_horizon", {"azimuth": 140.0, "elevation": 20.0}
+    )  # 30000 / (85000 * sin 20°) = 103 %
+    await _tick(hass, freezer, 16)
+    assert temps[-1].data["temperature"] == 19.5
+
+
+async def test_old_lux_thresholds_in_entry_are_ignored(
+    hass: HomeAssistant, freezer
+) -> None:
+    """0.4.1 speicherte Lux-Schwellen unter anderem Schlüssel: sie dürfen nichts stören."""
+    _, temps = await _sun_world(
+        hass,
+        global_extra={
+            **SUN_GLOBAL,
+            "sun_threshold_low": 15000,
+            "sun_threshold_high": 25000,
+            const.CONF_SUN_LOW: 50,
+        },
+    )
+    _set_sun(hass, 30000)
+    await _tick(hass, freezer, 11)
     assert temps[-1].data["temperature"] == 19.5

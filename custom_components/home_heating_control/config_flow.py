@@ -47,6 +47,7 @@ from .const import (
     CONF_SUN_HIGH,
     CONF_SUN_LOW,
     CONF_SUN_MAX,
+    CONF_SUN_REFERENCE,
     CONF_THERMOSTATS,
     CONF_VACATION_LEAD,
     CONF_WINDOW,
@@ -62,6 +63,7 @@ from .const import (
     DEFAULT_SUN_HIGH,
     DEFAULT_SUN_LOW,
     DEFAULT_SUN_MAX,
+    DEFAULT_SUN_REFERENCE,
     DEFAULT_VACATION_LEAD,
     DEFAULT_WINDOW_ALERT,
     DOMAIN,
@@ -83,14 +85,14 @@ def _offset_selector() -> selector.NumberSelector:
     )
 
 
-def _lux_selector() -> selector.NumberSelector:
+def _share_selector() -> selector.NumberSelector:
     return selector.NumberSelector(
         selector.NumberSelectorConfig(
-            min=0,
-            max=150000,
-            step=500,
+            min=10,
+            max=150,
+            step=5,
             mode=selector.NumberSelectorMode.BOX,
-            unit_of_measurement="lx",
+            unit_of_measurement="%",
         )
     )
 
@@ -256,11 +258,23 @@ def _global_schema(defaults: dict[str, Any]) -> vol.Schema:
                 )
             ),
             vol.Required(
+                CONF_SUN_REFERENCE,
+                default=defaults.get(CONF_SUN_REFERENCE, DEFAULT_SUN_REFERENCE),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=10000,
+                    max=200000,
+                    step=1000,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="lx",
+                )
+            ),
+            vol.Required(
                 CONF_SUN_LOW, default=defaults.get(CONF_SUN_LOW, DEFAULT_SUN_LOW)
-            ): _lux_selector(),
+            ): _share_selector(),
             vol.Required(
                 CONF_SUN_HIGH, default=defaults.get(CONF_SUN_HIGH, DEFAULT_SUN_HIGH)
-            ): _lux_selector(),
+            ): _share_selector(),
             vol.Required(
                 CONF_SUN_MAX, default=defaults.get(CONF_SUN_MAX, DEFAULT_SUN_MAX)
             ): selector.NumberSelector(

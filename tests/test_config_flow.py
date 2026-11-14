@@ -232,8 +232,8 @@ async def test_sun_thresholds_must_be_ordered(hass: HomeAssistant) -> None:
     )
     bad = {
         **GLOBAL_INPUT,
-        const.CONF_SUN_LOW: 20000,
-        const.CONF_SUN_HIGH: 10000,
+        const.CONF_SUN_LOW: 80,
+        const.CONF_SUN_HIGH: 40,
     }
     result = await hass.config_entries.flow.async_configure(result["flow_id"], bad)
     assert result["type"] is FlowResultType.FORM
@@ -252,6 +252,7 @@ async def test_sun_defaults_are_filled_in(hass: HomeAssistant) -> None:
     assert data[const.CONF_SUN_MAX] == const.DEFAULT_SUN_MAX
     assert data[const.CONF_SUN_LOW] == const.DEFAULT_SUN_LOW
     assert data[const.CONF_SUN_HIGH] == const.DEFAULT_SUN_HIGH
+    assert data[const.CONF_SUN_REFERENCE] == const.DEFAULT_SUN_REFERENCE
     assert data[const.CONF_SUN_DELAY] == const.DEFAULT_SUN_DELAY
     assert const.CONF_SUN_ENTITY not in data
 

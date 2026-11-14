@@ -6,6 +6,7 @@ werden kann. Das erwartete Verhalten steht in docs/VERHALTEN.md.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from decimal import ROUND_FLOOR, Decimal
 from enum import StrEnum
@@ -174,28 +175,43 @@ def decide(inputs: ZoneInputs) -> Decision:
     return Decision(HvacTarget.HEAT, temperature, reason)
 
 
+def sun_share(
+    lux: float | None, elevation: float | None, reference: float
+) -> float | None:
+    """Helligkeit als Anteil des Klarhimmel-Werts bei der aktuellen Sonnenhöhe.
+
+    Klarer Himmel liefert etwa `reference` × sin(Sonnenhöhe) Lux. 1,0 heißt also "so
+    hell wie bei klarem Himmel", 0,3 etwa "bedeckt". Gedacht für die Heizperiode
+    (Sonnenhöhen bis etwa 35°); im Hochsommer weicht die Näherung ab.
+    """
+    if lux is None or elevation is None or elevation <= 0 or reference <= 0:
+        return None
+    return lux / (reference * math.sin(math.radians(elevation)))
+
+
 def sun_reduction(
-    lux: float | None,
+    share: float | None,
     low: float,
     high: float,
     max_reduction: float,
     step: float,
 ) -> float:
-    """Absenkung in °C für die gemessene Helligkeit.
+    """Absenkung in °C für den Sonnenanteil (siehe `sun_share`).
 
-    Unter `low` keine, zwischen `low` und `high` die halbe, ab `high` die volle Absenkung.
-    Jede Stufe wird auf ganze Schritte der Thermostat-Auflösung abgerundet; bei einer
-    Höchstabsenkung von 0,5 und Schritt 0,5 bleibt es also bei "aus" oder "voll".
+    Unter `low` keine, zwischen `low` und `high` die halbe, ab `high` die volle Absenkung
+    (Schwellen als Anteil, 0,5 = 50 %). Jede Stufe wird auf ganze Schritte der
+    Thermostat-Auflösung abgerundet; bei einer Höchstabsenkung von 0,5 und Schritt 0,5
+    bleibt es also bei "aus" oder "voll".
     """
-    if lux is None or max_reduction <= 0:
+    if share is None or max_reduction <= 0:
         return 0.0
-    if lux >= high:
-        share = 1.0
-    elif lux >= low:
-        share = 0.5
+    if share >= high:
+        part = 1.0
+    elif share >= low:
+        part = 0.5
     else:
         return 0.0
-    return float(int(max_reduction * share / step + 1e-9)) * step
+    return float(int(max_reduction * part / step + 1e-9)) * step
 
 
 def sun_in_window(

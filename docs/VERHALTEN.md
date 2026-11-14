@@ -84,11 +84,13 @@ Reihenfolge, die erste zutreffende Regel gilt:
   das Vorheizen bis zum Zeitplanstart. Ein belegtes Bett (bei „Folgt dem Bett"), ECO und
   Abwesenheit verhindern es. Geprüft wird alle 5 Minuten.
 
-## Sonnen-Absenkung (optional, ab 0.4.1)
+## Sonnen-Absenkung (optional, ab 0.4.1; Sonnenanteil ab 0.4.2)
 
 Scheint die Sonne durchs Fenster, wärmt sie den Raum ohne Heizung; das Thermostat am
 Heizkörper merkt das oft spät. Die Steuerung senkt deshalb die **Komfort**-Solltemperatur
-einer Zone leicht ab, solange die Sonne in ihr Fenster scheint.
+einer Zone leicht ab, solange die Sonne in ihr Fenster scheint. Gedacht ist die Funktion für
+die **Heizperiode** (Sonnenhöhen bis etwa 35°). Im Sommer läuft die Heizung ohnehin nicht;
+die Näherung unten ist dafür nicht ausgelegt.
 
 Eingänge:
 
@@ -99,23 +101,38 @@ Eingänge:
 
 Ablauf:
 
-1. **Stufe nach Helligkeit**: unter dem unteren Schwellwert (Standard 15 000 lx) keine
-   Absenkung, ab dem unteren die **halbe**, ab dem oberen (Standard 25 000 lx) die **volle**
+1. **Sonnenanteil**: Die gemessene Helligkeit wird mit der Helligkeit verglichen, die bei
+   klarem Himmel zur aktuellen Sonnenhöhe gehört: `Referenz × sin(Sonnenhöhe)`. Die
+   **Referenz** ist die Helligkeit bei klarem Himmel und Sonne im Zenit (Standard 85 000 lx,
+   aus Messungen vom 14.11.2026 abgeleitet). Ergebnis in Prozent: klarer Himmel etwa 100 %,
+   dünne Wolken 50 bis 70 %, bedeckt 20 bis 40 %. Damit zählt dieselbe Helligkeit bei tiefer
+   Wintersonne als Sonne, bei hoher Sonne nicht. Der aktuelle Wert steht als `sun_share` im
+   Entscheidungssensor, zum Einstellen der Referenz.
+2. **Stufe nach Sonnenanteil**: unter dem unteren Schwellwert (Standard 50 %) keine
+   Absenkung, ab dem unteren die **halbe**, ab dem oberen (Standard 75 %) die **volle**
    Absenkung. Die **größte Absenkung** ist einstellbar (Standard 0,5 °C, 0 bis 2 °C).
-2. Jede Stufe wird auf ganze **0,5-°C-Schritte abgerundet** (Thermostat-Auflösung). Bei einer
+3. Jede Stufe wird auf ganze **0,5-°C-Schritte abgerundet** (Thermostat-Auflösung). Bei einer
    größten Absenkung von 0,5 °C gibt es also nur „keine" oder „voll"; die halbe Stufe wirkt
    erst ab 1 °C.
-3. **Wartezeit** (Standard 10 min): Eine neue Stufe gilt erst, wenn sie so lange unverändert
+4. **Wartezeit** (Standard 10 min): Eine neue Stufe gilt erst, wenn sie so lange unverändert
    angehalten hat, in beide Richtungen. Vorbeiziehende Wolken erzeugen kein Hin und Her.
-4. **Sonne im Fenster**: Die Sonne muss mehr als 3° über dem Horizont stehen und höchstens
-   60° seitlich der Fensterrichtung. Der Sonnenstand wird alle 5 Minuten geprüft.
-5. Die Absenkung wird von der **gerundeten** Komforttemperatur abgezogen (20 °C wird 19,5 °C).
+5. **Sonne im Fenster**: Die Sonne muss mindestens 5° über dem Horizont stehen (darunter ist
+   der Sonnenanteil unzuverlässig und die Sonne wärmt kaum) und höchstens 60° seitlich der
+   Fensterrichtung. Sonnenanteil und Sonnenstand werden bei jeder neuen Helligkeitsmeldung
+   und zusätzlich alle 5 Minuten geprüft.
+6. Die Absenkung wird von der **gerundeten** Komforttemperatur abgezogen (20 °C wird 19,5 °C).
    Das Thermostat bekommt damit Werte im 0,5-°C-Raster.
 
 Sie gilt nur bei Komfort (Grund `schedule_comfort` oder `comfort_forced`). **Nicht** betroffen
 sind ECO, Abwesenheit, Fenster offen, Frostschutz, Party mit eigener Party-Temperatur und
-Vorheizen. Der Entscheidungssensor zeigt die aktuelle Absenkung im Attribut `sun_reduction`.
-Der eigene Sonnenwert wird nicht als Handverstellung gewertet.
+Vorheizen. Der Entscheidungssensor zeigt die aktuelle Absenkung im Attribut `sun_reduction`
+und den Sonnenanteil in Prozent im Attribut `sun_share`. Der eigene Sonnenwert wird nicht als
+Handverstellung gewertet.
+
+**Änderung gegenüber 0.4.1:** Dort galten feste Lux-Schwellen (15 000 und 25 000 lx). Die
+passten nicht zur tiefen Wintersonne am Vormittag. Die Schlüssel `sun_threshold_low` und
+`sun_threshold_high` werden nicht mehr gelesen; die neuen Felder heißen
+`sun_share_low`, `sun_share_high` und `sun_reference_lux`.
 
 ## Raumtemperatur-Sensor (optional, ab 0.3.0)
 

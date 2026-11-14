@@ -21,8 +21,9 @@
           "manual_override_minutes": "Handverstellung respektieren für",
           "vacation_lead_hours": "Urlaub: Vorlauf vor Rückkehr",
           "sun_entity": "Sonne: Helligkeits-Sensor",
-          "sun_threshold_low": "Sonne: ab hier halbe Absenkung",
-          "sun_threshold_high": "Sonne: ab hier volle Absenkung",
+          "sun_reference_lux": "Sonne: Helligkeit bei klarem Himmel",
+          "sun_share_low": "Sonne: ab hier halbe Absenkung",
+          "sun_share_high": "Sonne: ab hier volle Absenkung",
           "sun_max_reduction": "Sonne: größte Absenkung",
           "sun_delay_minutes": "Sonne: Wartezeit"
         },
@@ -43,8 +44,9 @@
           "manual_override_minutes": "Optional. Wird die Solltemperatur direkt am Thermostat verstellt, lässt die Steuerung den Wert so lange stehen (Minuten) oder bis die Zone ihren Zustand wechselt (z. B. Zeitplanwechsel). 0 = aus, die Steuerung setzt den Wert wie bisher zurück.",
           "vacation_lead_hours": "Stunden vor dem Rückkehr-Zeitpunkt, ab denen wieder normal (mit Komfort laut Zeitplan) geheizt wird.",
           "sun_entity": "Optional. Außenhelligkeit in Lux (z. B. von der Wetterstation). Leer = keine Sonnen-Absenkung. Wirkt nur in Zonen mit Fensterrichtung und nur bei Komfort.",
-          "sun_threshold_low": "Ab dieser Helligkeit (Lux) scheint die Sonne. Es wird die halbe größte Absenkung angewendet (auf 0,5 °C abgerundet).",
-          "sun_threshold_high": "Ab dieser Helligkeit (Lux) scheint die Sonne kräftig. Es gilt die volle größte Absenkung. Muss mindestens so hoch sein wie der untere Wert.",
+          "sun_reference_lux": "So hell misst der Sensor bei klarem Himmel und Sonne im Zenit (Lux). Daraus wird für die aktuelle Sonnenhöhe berechnet, wie hell es bei klarem Himmel wäre. Der Sensor-Attributwert „sun_share“ am Entscheidungssensor zeigt, wie viel Prozent davon gerade gemessen werden. Gedacht für die Heizperiode.",
+          "sun_share_low": "Anteil der Klarhimmel-Helligkeit in Prozent, ab dem die Sonne scheint. Es gilt die halbe größte Absenkung (auf 0,5 °C abgerundet). Bedeckt liegt meist bei 20 bis 40 %.",
+          "sun_share_high": "Anteil der Klarhimmel-Helligkeit in Prozent, ab dem die Sonne kräftig scheint. Es gilt die volle größte Absenkung. Muss mindestens so hoch sein wie der untere Wert.",
           "sun_max_reduction": "So viel wird die Komfort-Solltemperatur bei kräftiger Sonne gesenkt (0 = aus). Das Thermostat bekommt Werte in 0,5-°C-Schritten.",
           "sun_delay_minutes": "Minuten, die eine neue Sonnenstufe anhalten muss, bevor sie gilt (verhindert Hin und Her bei vorbeiziehenden Wolken)."
         }
@@ -68,8 +70,9 @@
           "manual_override_minutes": "Handverstellung respektieren für",
           "vacation_lead_hours": "Urlaub: Vorlauf vor Rückkehr",
           "sun_entity": "Sonne: Helligkeits-Sensor",
-          "sun_threshold_low": "Sonne: ab hier halbe Absenkung",
-          "sun_threshold_high": "Sonne: ab hier volle Absenkung",
+          "sun_reference_lux": "Sonne: Helligkeit bei klarem Himmel",
+          "sun_share_low": "Sonne: ab hier halbe Absenkung",
+          "sun_share_high": "Sonne: ab hier volle Absenkung",
           "sun_max_reduction": "Sonne: größte Absenkung",
           "sun_delay_minutes": "Sonne: Wartezeit"
         },
@@ -90,8 +93,9 @@
           "manual_override_minutes": "Optional. Wird die Solltemperatur direkt am Thermostat verstellt, lässt die Steuerung den Wert so lange stehen (Minuten) oder bis die Zone ihren Zustand wechselt (z. B. Zeitplanwechsel). 0 = aus, die Steuerung setzt den Wert wie bisher zurück.",
           "vacation_lead_hours": "Stunden vor dem Rückkehr-Zeitpunkt, ab denen wieder normal (mit Komfort laut Zeitplan) geheizt wird.",
           "sun_entity": "Optional. Außenhelligkeit in Lux (z. B. von der Wetterstation). Leer = keine Sonnen-Absenkung. Wirkt nur in Zonen mit Fensterrichtung und nur bei Komfort.",
-          "sun_threshold_low": "Ab dieser Helligkeit (Lux) scheint die Sonne. Es wird die halbe größte Absenkung angewendet (auf 0,5 °C abgerundet).",
-          "sun_threshold_high": "Ab dieser Helligkeit (Lux) scheint die Sonne kräftig. Es gilt die volle größte Absenkung. Muss mindestens so hoch sein wie der untere Wert.",
+          "sun_reference_lux": "So hell misst der Sensor bei klarem Himmel und Sonne im Zenit (Lux). Daraus wird für die aktuelle Sonnenhöhe berechnet, wie hell es bei klarem Himmel wäre. Der Sensor-Attributwert „sun_share“ am Entscheidungssensor zeigt, wie viel Prozent davon gerade gemessen werden. Gedacht für die Heizperiode.",
+          "sun_share_low": "Anteil der Klarhimmel-Helligkeit in Prozent, ab dem die Sonne scheint. Es gilt die halbe größte Absenkung (auf 0,5 °C abgerundet). Bedeckt liegt meist bei 20 bis 40 %.",
+          "sun_share_high": "Anteil der Klarhimmel-Helligkeit in Prozent, ab dem die Sonne kräftig scheint. Es gilt die volle größte Absenkung. Muss mindestens so hoch sein wie der untere Wert.",
           "sun_max_reduction": "So viel wird die Komfort-Solltemperatur bei kräftiger Sonne gesenkt (0 = aus). Das Thermostat bekommt Werte in 0,5-°C-Schritten.",
           "sun_delay_minutes": "Minuten, die eine neue Sonnenstufe anhalten muss, bevor sie gilt (verhindert Hin und Her bei vorbeiziehenden Wolken)."
         }
